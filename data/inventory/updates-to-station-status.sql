@@ -10,7 +10,7 @@ statuslatest as (
 ),
 updates as (
     select
-        u.station_id, u.terminal, u.name, u.coords_longlat,
+        u.station_id, u.terminal, u.name, u.coord_long, u.coord_lat,
         u.installed, u.accepts_dockable_bikes, u.accepts_lockable_bikes,
         u.capacity, u.renting, u.returning_, u.valet_status,
         u.last_reported, u.ts
@@ -21,7 +21,7 @@ updates as (
 ),
 grouped as (
     select
-        station_id, terminal, name, coords_longlat,
+        station_id, terminal, name, coord_long, coord_lat,
         installed, accepts_dockable_bikes, accepts_lockable_bikes,
         capacity, renting, returning_, valet_status,
         count(*) as cnt,
@@ -31,12 +31,12 @@ grouped as (
         max(ts) as max_ts
     from updates
     group by
-        station_id, terminal, name, coords_longlat,
+        station_id, terminal, name, coord_long, coord_lat,
         installed, accepts_dockable_bikes, accepts_lockable_bikes,
         capacity, renting, returning_, valet_status
 )
 insert into citibike_station_status (
-    station_id, terminal, name, coords_longlat,
+    station_id, terminal, name, coord_long, coord_lat,
     installed, accepts_dockable_bikes, accepts_lockable_bikes,
     capacity, renting, returning_, valet_status,
     update_cnt,
@@ -44,7 +44,7 @@ insert into citibike_station_status (
     min_last_reported, last_reported
 )
 select
-    station_id, terminal, name, coords_longlat,
+    station_id, terminal, name, coord_long, coord_lat,
     installed, accepts_dockable_bikes, accepts_lockable_bikes,
     capacity, renting, returning_, valet_status,
     cnt,
@@ -54,7 +54,7 @@ from grouped
 order by station_id,
          max_last_reported,
          max_ts
-on conflict (station_id, terminal, coalesce(name, ''), coords_longlat,
+on conflict (station_id, terminal, coalesce(name, ''), coord_long, coord_lat,
              installed, accepts_dockable_bikes, accepts_lockable_bikes,
              capacity, renting, returning_, coalesce(valet_status, ''))
     do update set

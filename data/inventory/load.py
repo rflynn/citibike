@@ -99,7 +99,8 @@ insert into citibike_inventory_log (ts) values (%s)
             f = dict(station_id=st.get('id'),
                      terminal=st.get('terminal'),
                      name=st.get('name'),
-                     coords_longlat=geo['coordinates'],
+                     coord_long=geo['coordinates'][0],
+                     coord_lat=geo['coordinates'][1],
                      installed=st.get('installed'),
                      accepts_dockable_bikes=st.get('accepts_dockable_bikes'),
                      accepts_lockable_bikes=st.get('accepts_lockable_bikes'),
@@ -118,13 +119,13 @@ insert into citibike_inventory_log (ts) values (%s)
                 f['bikes'] = Json(f['bikes'])
             cursor.execute('''
 insert into citibike_inventory_raw (
-    station_id, terminal, name, coords_longlat,
+    station_id, terminal, name, coord_long, coord_lat,
     installed, accepts_dockable_bikes, accepts_lockable_bikes,
     capacity, renting, returning_, valet_status, docks_disabled,
     bikes_available, docks_available, bikes_disabled, bikes,
     last_reported, ts
 ) values (
-    %(station_id)s, %(terminal)s, %(name)s, %(coords_longlat)s,
+    %(station_id)s, %(terminal)s, %(name)s, %(coord_long)s, %(coord_lat)s,
     %(installed)s, %(accepts_dockable_bikes)s, %(accepts_lockable_bikes)s,
     %(capacity)s, %(renting)s, %(returning_)s, %(valet_status)s, %(docks_disabled)s,
     %(bikes_available)s, %(docks_available)s, %(bikes_disabled)s, %(bikes)s,

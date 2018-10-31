@@ -9,7 +9,8 @@ create table citibike_inventory_log (
 -- drop table citibike_inventory_raw;
 create table citibike_inventory_raw (
     -- station statuses; expected to remain relative stable, and only change occasionally
-    coords_longlat          numeric[2] not null,
+    coord_long              numeric not null,
+    coord_lat               numeric not null,
     -- at the time of creation most entries will be stations; but some entries are lone lockable bikes
     station_id              text,
     terminal                text,
@@ -35,14 +36,15 @@ create table citibike_inventory_raw (
     created_at              timestamp not null default now()
 );
 
-create index idx_citibike_inventory_raw_coords_longlat on citibike_inventory_raw (coords_longlat);
+create index idx_citibike_inventory_raw_coords_longlat2 on citibike_inventory_raw (coord_long,coord_lat);
 create index idx_citibike_inventory_raw_last_reported on citibike_inventory_raw (last_reported);
 
 
 -- drop table citibike_inventory_updates ;
 create table citibike_inventory_updates (
     -- station statuses; expected to remain relative stable, and only change occasionally
-    coords_longlat          numeric[2] not null,
+    coord_long              numeric not null,
+    coord_lat               numeric not null,
     -- at the time of creation most entries will be stations; but some entries are lone lockable bikes
     station_id              text,
     terminal                text,
@@ -68,7 +70,7 @@ create table citibike_inventory_updates (
     created_at              timestamp not null default now()
 );
 
-create index idx_citibike_inventory_updates_coords_longlat on citibike_inventory_updates (coords_longlat);
+create index idx_citibike_inventory_updates_coords_longlat2 on citibike_inventory_updates (coord_long, coord_lat);
 create index idx_citibike_inventory_updates_last_reported on citibike_inventory_updates (last_reported);
 
 
@@ -80,6 +82,8 @@ create table citibike_station_status (
     terminal                text not null check (terminal <> ''),
     name                    text,
     coords_longlat          numeric[2] not null,
+    coord_long              numeric not null,
+    coord_lat               numeric not null,
     installed               boolean,
     accepts_dockable_bikes  boolean,
     accepts_lockable_bikes  boolean,
@@ -97,8 +101,8 @@ create table citibike_station_status (
     updated_at              timestamp not null default now()
 );
 
-create unique index idx_citibike_station_status_uniq on citibike_station_status (
-    station_id, terminal, coalesce(name, ''), coords_longlat,
+create unique index idx_citibike_station_status_uniq2 on citibike_station_status (
+    station_id, terminal, coalesce(name, ''), coord_long, coord_lat,
     installed, accepts_dockable_bikes, accepts_lockable_bikes,
     capacity, renting, returning_, coalesce(valet_status, ''));
 
@@ -120,3 +124,4 @@ create table citibike_station_inventory (
 );
 create index idx_citibike_station_inventory_id on citibike_station_inventory (station_id);
 create index idx_citibike_station_inventory_last_reported on citibike_station_inventory (last_reported);
+
