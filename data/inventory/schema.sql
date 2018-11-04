@@ -125,3 +125,18 @@ create table citibike_station_inventory (
 create index idx_citibike_station_inventory_id on citibike_station_inventory (station_id);
 create index idx_citibike_station_inventory_last_reported on citibike_station_inventory (last_reported);
 
+
+create view citibike_station_inventory_magnitude as
+with x as (
+    select row_number()over()n, station_id, bikes_available
+    from citibike_station_inventory
+    order by station_id,last_reported
+)
+select
+    x.station_id,
+    sum(abs(x.bikes_available-y.bikes_available))
+from x
+join x y on y.station_id=x.station_id and y.n=x.n+1
+group by x.station_id
+order by sum(abs(x.bikes_available-y.bikes_available)) desc;
+
