@@ -76,12 +76,11 @@ create index idx_citibike_inventory_updates_last_reported on citibike_inventory_
 
 
 
-drop table citibike_station_status;
+-- drop table citibike_station_status;
 create table citibike_station_status (
     station_id              text not null check (station_id <> ''),
     terminal                text not null check (terminal <> ''),
     name                    text,
-    coords_longlat          numeric[2] not null,
     coord_long              numeric not null,
     coord_lat               numeric not null,
     installed               boolean,

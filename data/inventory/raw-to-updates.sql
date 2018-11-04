@@ -14,6 +14,8 @@ updates as (
     -- raw records that are 'last_reported' after our most recent status
     -- could be [0, n] records; raw records may be dupes -- that is, reporting on the same timestamp since no changes have taken place. we sample at a regular rate, but underlying changes may or may not happen
     select
+        coord_long,
+        coord_lat,
         station_id,
         terminal,
         name,
@@ -30,10 +32,7 @@ updates as (
         bikes_disabled,
         bikes,
         last_reported,
-        ts,
-        now() as created_at,
-        coord_long,
-        coord_lat
+        ts
     from
         (select
             r.*,
@@ -49,7 +48,21 @@ updates as (
         )_
     where rn=1
 )
-insert into citibike_inventory_updates
-select * from updates;
+insert into citibike_inventory_updates (
+    coord_long, coord_lat,
+    station_id, terminal, name,
+    installed, accepts_dockable_bikes, accepts_lockable_bikes,
+    capacity, renting, returning_, valet_status,
+    docks_disabled, bikes_available, docks_available, bikes_disabled,
+    bikes, last_reported, ts
+)
+select
+    coord_long, coord_lat,
+    station_id, terminal, name,
+    installed, accepts_dockable_bikes, accepts_lockable_bikes,
+    capacity, renting, returning_, valet_status,
+    docks_disabled, bikes_available, docks_available, bikes_disabled,
+    bikes, last_reported, ts
+from updates;
 
 commit;
