@@ -30,7 +30,6 @@ updates as (
         bikes_available,
         docks_available,
         bikes_disabled,
-        bikes,
         last_reported,
         ts
     from
@@ -54,7 +53,7 @@ insert into citibike_inventory_updates (
     installed, accepts_dockable_bikes, accepts_lockable_bikes,
     capacity, renting, returning_, valet_status,
     docks_disabled, bikes_available, docks_available, bikes_disabled,
-    bikes, last_reported, ts
+    last_reported, ts
 )
 select
     coord_long, coord_lat,
@@ -62,7 +61,7 @@ select
     installed, accepts_dockable_bikes, accepts_lockable_bikes,
     capacity, renting, returning_, valet_status,
     docks_disabled, bikes_available, docks_available, bikes_disabled,
-    bikes, last_reported, ts
+    last_reported, ts
 from updates;
 
 commit;

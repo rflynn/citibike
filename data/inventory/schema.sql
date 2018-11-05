@@ -66,8 +66,7 @@ create table citibike_inventory_updates (
     -- ...
     -- time info
     last_reported           integer,
-    ts                      timestamp not null,
-    created_at              timestamp not null default now()
+    ts                      timestamp not null
 );
 
 create index idx_citibike_inventory_updates_coords_longlat2 on citibike_inventory_updates (coord_long, coord_lat);
@@ -118,8 +117,7 @@ create table citibike_station_inventory (
     bikes_disabled          smallint,
     -- timing info
     last_reported           integer, -- freshness as reported by api
-    ts                      timestamp not null, -- when API is hit
-    created_at              timestamp not null default now() -- when record was created
+    ts                      timestamp not null -- when API is hit
 );
 create index idx_citibike_station_inventory_id on citibike_station_inventory (station_id);
 create index idx_citibike_station_inventory_last_reported on citibike_station_inventory (last_reported);
