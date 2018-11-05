@@ -14,8 +14,10 @@ c = conn.cursor()
 c.execute('''
 select
     station_id,
-    coords_longlat::float[2] -- must cast to make numpy dtypes happy
-from citibike_station
+    ARRAY[coord_long, coord_lat]::float[2] -- must cast to make numpy dtypes happy
+from citibike_station_status s
+where last_reported = (select max(last_reported) from citibike_station_status where station_id=s.station_id)
+and installed  -- not 'Coming Soon'
 order by station_id
 -- limit 30 offset 180
 ''')
@@ -92,13 +94,12 @@ print('maskimg 0/1 shape', maskimg[:,0].shape, maskimg[:,1].shape)
 Ti = griddata((px, py), f, (X, Y), method='nearest')
 print('Ti.shape', Ti.shape)
 
-maskimg = np.invert(maskimg.astype(bool)[::-1])
+maskimg = np.invert(maskimg.astype(bool)[::-1])  # reverse, invert and convert to bool to make np.ma-sking work down below
 maskimg2 = skimage.transform.resize(maskimg, X.shape)
 print('maskimg2', maskimg2.shape, maskimg2)
 
 Ti2 = np.ma.array(Ti, mask=maskimg2)
 
-#r, c = (i+1) // 2, (i+1) % 2
 cn = ax.contourf(X, Y, Ti2,
                  alpha=0.3,
                  levels=[-0.5,0.5,4.5,9999],
@@ -111,7 +112,7 @@ cn = ax.contourf(X, Y, Ti,
                  alpha=0.3)
 #ax.clabel(cn, inline=True, fmt='%.0f', fontsize=10)
 '''
-cn = ax.contour(X, Y, Ti2, alpha=0.35,
+cn = ax.contour(X, Y, Ti2, alpha=0.30,
                 levels=[-0.5,0.5,4.5,9999],
                 colors=['red', 'goldenrod', '#009900'],
                 linewidths=0.5)
