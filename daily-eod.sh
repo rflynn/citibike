@@ -1,4 +1,5 @@
 #!/bin/bash
 
-(cd data/script/ && /bin/bash clear_citibike_inventory_raw.sh)
-(cd data/script/ && /bin/bash pgdump.sh)
+PATH=$PATH:/usr/local/bin
+(cd script/ && /bin/bash clear_citibike_inventory_raw.sh)
+(cd script/ && /bin/bash pgdump.sh)

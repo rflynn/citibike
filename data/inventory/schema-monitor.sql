@@ -1,6 +1,6 @@
 begin;
 
-drop view monitor_diskusage;
+drop view if exists monitor_diskusage;
 create view monitor_diskusage as
 SELECT
     oid, table_schema as schema,
@@ -25,7 +25,7 @@ SELECT
 where table_schema='public'
 order by total_bytes desc;
 
-drop view monitor_queries_blocked;
+drop view if exists monitor_queries_blocked;
 create view monitor_queries_blocked as
 SELECT blocked_locks.pid     AS blocked_pid,
          blocked_activity.usename  AS blocked_user,
