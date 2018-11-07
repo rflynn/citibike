@@ -6,6 +6,7 @@ from scipy.interpolate import griddata
 import matplotlib.image as mpimg
 from PIL import Image
 import skimage
+import datetime
 
 import psycopg2
 connstr = 'host=localhost port=5432 dbname=citibike user=postgres password=password'
@@ -38,6 +39,8 @@ y = np.arange(ymin, ymax, delta)
 print('x.shape={} y.shape={}'.format(x.shape, y.shape))
 X, Y = np.meshgrid(x, y)
 print('X.shape={} Y.shape={}'.format(X.shape, Y.shape))
+
+ts = datetime.datetime.now()
 
 c.execute('''
 with x as (
@@ -151,4 +154,8 @@ def get_contour_verts(cn):
 
 #print('contours', get_contour_verts(cn)[0])
 
+ts = tsstr = ts.strftime('%Y-%m-%d-%H-%M-%S')
+savepath = '/Users/rf/src/citibike/analysis/contour-stations/contour-stations-{}.svg'.format(tsstr)
+# options reduce whitespace
+plt.savefig(savepath, format='svg', dpi=220, bbox_inches='tight', pad_inches=0)
 plt.show()

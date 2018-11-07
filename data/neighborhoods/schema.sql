@@ -43,3 +43,5 @@ create table neighborhood_section_manhattan (
     unique (state, neighborhood_name)
 );
 comment on table neighborhood_section_manhattan is 'larger-scale sections of Manhattan -- >= neighborhood, < borough';
+
+create view station_neighborhood_borough as select s.station_id, s.name, coalesce(sn.nname, city) as neighborhood, coalesce(case ncounty when 'Kings' then 'Brooklyn' when 'New York' then 'Manhattan' else ncounty end, city) as pseudoborough from citibike_station s join station_neighborhoods sn using (station_id);

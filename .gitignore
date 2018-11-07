@@ -1,2 +1,3 @@
 .*.sw[opn]
+.DS_Store
 venv/
