@@ -206,6 +206,7 @@ print('missing', missing)
 from matplotlib.patches import Polygon
 from matplotlib.collections import PatchCollection
 import shapely.geometry as sg
+from shapely.geometry.point import Point
 import shapely.ops as so
 import matplotlib.pyplot as plt
 
@@ -227,6 +228,26 @@ import matplotlib.pyplot as plt
 NeighborhoodShapesPatches = [Polygon(shape, True, color='none') for _name, shape in NeighborhoodShapes.items()]
 print(len(NeighborhoodShapesPatches))
 p = PatchCollection(NeighborhoodShapesPatches, alpha=1.)
+import copy
+NeighborhoodShapesPatchCollection = copy.copy(p)  # XXX: NOTE: gets blown away with plt.clf() so make a copy!
+
+#print(NeighborhoodShapesPatchCollection.contains(Point(-74, 45)))
+
+print(NeighborhoodShapesPatchCollection.contains(Point(-74.08, 40.66)))
+print(any(patch.contains(Point(-74.08, 40.66))[0] for patch in NeighborhoodShapesPatches))
+for patch in NeighborhoodShapesPatches:
+    print(patch.contains(Point(-74.08, 40.66)))
+
+#print(NeighborhoodShapesPatchCollection.contains(Point(-74.0, 40.74)))
+
+#contained, _ = p.contains(Point(-74.0, 40.74))
+#print(contained)
+print(dir(p))
+
+xmin = vor.points[:, 0].min()
+xmax = vor.points[:, 0].max()
+ymin = vor.points[:, 1].min()
+ymax = vor.points[:, 1].max()
 
 #plot it
 plt.clf()
@@ -235,8 +256,8 @@ fig, ax = plt.subplots()
 ax.add_collection(p)
 fig.set_size_inches((5, 5))
 fig.set_dpi(220)
-#plt.axis([xmin, xmax, 
-#          ymin, ymax])
+plt.axis([xmin, xmax, 
+          ymin, ymax])
 plt.tick_params(labelsize=3)
 plt.box(False)
 
@@ -247,7 +268,7 @@ savepath = '/Users/rf/src/citibike/analysis/voronoi/neighborhoods-{}.svg'.format
 # options reduce whitespace
 plt.savefig(savepath, format='svg', dpi=220, bbox_inches='tight', pad_inches=0)
 '''
-
+pass
 #plt.show() #if not interactive
 
 
@@ -259,7 +280,7 @@ region_point = {vor.point_region[i]: i for i, _s in enumerate(stations)}
 len(region_point)
 
 
-# In[20]:
+# In[18]:
 
 
 share_vertex = [set() for _ in vor.vertices]
@@ -270,14 +291,24 @@ for i, region in enumerate(vor.regions):
 share_vertex[0:10]
 
 
-# In[21]:
+# In[19]:
 
 
+assert NeighborhoodShapesPatchCollection.contains(Point(-74.0, 40.74))
+#assert (NeighborhoodShapesPatchCollection.contains(Point(100., 100.)) is False)
+print(NeighborhoodShapesPatchCollection.contains(Point(-74.08, 40.66)))
+print(any(patch.contains(Point(-74.08, 40.66))[0] for patch in NeighborhoodShapesPatches))
 Neighbors = [set() for _ in vor.regions]
 for i, region in enumerate(vor.regions):
     for vertex in region:
-        Neighbors[i] |= share_vertex[vertex]
-    if Neighbors[i]:
+        #print('vertex', vertex, vor.vertices[vertex])
+        # apply masking -- check if vertex point is contained in NeighborhoodShapesPatchCollection...
+        pt = Point(*vor.vertices[vertex])
+        contained = any(patch.contains(pt)[0] for patch in NeighborhoodShapesPatches)
+        if contained:
+            # print(contained, pt)
+            Neighbors[i] |= share_vertex[vertex]
+    if i in Neighbors[i]:
         Neighbors[i].remove(i)  # remove self-reference
     assert i not in Neighbors[i]
 assert len(Neighbors) == len(stations) + 1
@@ -286,9 +317,10 @@ assert len(Neighbors) == len(stations) + 1
 Neighbors[0:12]
 
 
-# In[22]:
+# In[20]:
 
 
+# translates internal Voronoi ids into station ids
 station_id_neighbors = dict()
 try:
     assert len(Neighbors) == len(stations) + 1
@@ -324,7 +356,7 @@ with open(savepath, 'w') as jf:
 len(station_id_neighbors)
 
 
-# In[23]:
+# In[21]:
 
 
 '''
@@ -359,7 +391,7 @@ assert G['119']['144'] == G['144']['119']
 #print(G.nodes.data())
 
 
-# In[24]:
+# In[38]:
 
 
 get_ipython().run_line_magic('matplotlib', 'inline')
@@ -492,7 +524,7 @@ for i, (rv0, rv1) in enumerate(vor.ridge_vertices):
 # ax.scatter(vor.points[:, 0], vor.points[:, 1], s=0.05, alpha=0.5, facecolor='xkcd:cerulean')
 
 # label station with their value
-for (x, y), ba in zip(vor.points, bikes_available):
+for (x, y), st, ba in zip(vor.points, stations, bikes_available):
     ax.text(x, y, ba, fontsize=5,
             horizontalalignment='center',
             verticalalignment='center')
@@ -509,7 +541,9 @@ for st in stations:
 import copy
 from shapely.geometry import LineString, MultiLineString
 def allnz(g, nodeid):
-    return all(g.node[k].get('bikes_available') == 0 for k in g.neighbors(nodeid))
+    """has >0 neighbors, and they're all zero"""
+    neighbors = list(g.neighbors(nodeid))
+    return neighbors and all(g.node[k].get('bikes_available') == 0 for k in neighbors)
 '''
 def zn(g, nodeid):
     ns = set(k for k in g.neighbors(nodeid) if g.node[k].get('bikes_available') == 0)
@@ -539,7 +573,15 @@ while ZeroesLeft:
     ZeroGroups.append(zneighbors)
 '''
 # all stations w/ zero bikes where all neighbors also have zero bikes
-ZeroGroups = [set([stid]) for stid in Zeroes if allnz(G, stid)]
+ZeroG = [set([stid] + list(G.neighbors(stid))) for stid in Zeroes if allnz(G, stid)]
+ZeroGroups = []
+while ZeroG:
+    zg0 = ZeroG.pop(0)
+    og = [g for g in ZeroG if not g.isdisjoint(zg0)]
+    for o in og:
+        zg0 = zg0 | o
+        ZeroG.remove(o)
+    ZeroGroups.append(zg0)
 # highlight regions with zero bikes_available
 for zg in ZeroGroups:
     #print('zg', zg)
@@ -555,13 +597,16 @@ for zg in ZeroGroups:
     if isinstance(b, LineString):
         coords = b.coords  # [(x0,y0),...]
         x, y = zip(*coords)
-        ax.plot(x, y, 'r-')
+        pl, = ax.plot(x, y, 'r-')
+        pl.set_clip_path(npp)
     elif isinstance(b, MultiLineString):
         # just treat MultiLineString as [LineString, ...]...
         for ls in b.geoms:
             coords = ls.coords  # [(x0,y0),...]
             x, y = zip(*coords)
-            ax.plot(x, y, 'r-')
+            pl, = ax.plot(x, y, 'r-')
+            pl.set_clip_path(npp)
+
 
 '''
 for stid in Zeroes:
@@ -572,7 +617,7 @@ for stid in Zeroes:
     x, y = zip(*coords)
     ax.plot(x, y, 'r-')
 '''
-    
+
 # plot
 fig.set_size_inches((10, 10))
 fig.set_dpi(220)
@@ -590,40 +635,52 @@ plt.savefig(savepath, format='svg', dpi=220, bbox_inches='tight', pad_inches=0)
 plt.show()
 
 
-# In[ ]:
+# In[23]:
+
+
+sorted(G.neighbors('3437'))
+
+
+# In[24]:
+
+
+station_id_neighbors['3437']
+
+
+# In[25]:
 
 
 def PolyArea(x,y):
     return 0.5*np.abs(np.dot(x,np.roll(y,1))-np.dot(y,np.roll(x,1)))
 
 
-# In[ ]:
+# In[26]:
 
 
 sorted(list(enumerate(vor.regions)), key=lambda x: len(x[1]), reverse=True)
 len(vor.regions)
 
 
-# In[ ]:
+# In[27]:
 
 
 len(Neighbors)
 
 
-# In[ ]:
+# In[28]:
 
 
 vor.point_region[86]
 
 
-# In[ ]:
+# In[29]:
 
 
 spr = set(vor.point_region)
 print(len(vor.point_region), len(spr))
 
 
-# In[ ]:
+# In[30]:
 
 
 StationConfig = {'stations': {stid: {'coords': st['coords']} for stid, st in Stations.items()}}
@@ -632,7 +689,7 @@ StationConfig = {'stations': {stid: {'coords': st['coords']} for stid, st in Sta
 StationConfig
 
 
-# In[ ]:
+# In[31]:
 
 
 nx.clustering(G)
@@ -640,7 +697,7 @@ list(nx.connected_components(G))
 sorted((d, n) for n, d in G.degree())
 
 
-# In[ ]:
+# In[32]:
 
 
 nx.draw(G, with_labels=True, font_weight='bold')
