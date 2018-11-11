@@ -4,7 +4,7 @@ declare -r url='https://layer.bicyclesharing.net/map/v1/nyc/map-inventory'
 
 declare -r ua='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.87 Safari/537.36'
 #declare -r ua='Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
-declare -r referer=''
+declare -r referer='https://member.citibikenyc.com/map/'
 
 declare -r ts=$(date +%Y-%m-%d-%H-%M-%S)
 declare -r yyyy=${ts:0:4}
