@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+body {
+    margin: 0;
+    padding: 0;
+}
+
+path {
+    fill: #fff;
+    stroke: #ddd;
+    stroke-width: .5px;
+}
+
+path:hover {
+    stroke: #333;
+}
+
+</style>
+<body>
+<script src="//d3js.org/d3.v4.min.js"></script>
+<script src="//d3js.org/topojson.v1.min.js"></script>
+<script>
+
+var width = screen.width,
+    height = screen.height;
+
+//var path = d3.geo.path();
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+svg.append("defs");
+
+var url = "https://gist.githubusercontent.com/mbostock/4090846/raw/d534aba169207548a8a3d670c9c2cc719ff05c47/us.json";
+//var url = "stations-voronoi-2018-11-15-08-55-18.json";
+var url = "stations-voronoi-2018-11-15-09-56-44.json";
+d3.json(url, function(error, topology) {
+    if (error) throw error;
+  
+    console.log("topojson", topology)
+    //var geojson = topojson.feature(topology, topology.objects.counties);
+    var geojson = topology;
+    console.log("geojson", geojson)
+
+    // ref: https://stackoverflow.com/questions/14492284/center-a-map-in-d3-given-a-geojson-object
+    var projection = d3.geoMercator().fitSize([width, height], geojson);
+    var path = d3.geoPath().projection(projection);
+
+    var projection = d3.geoMercator()
+      .scale(width / 2 / Math.PI * 1200)  // XXX: 1200 hardcoded :-P
+      .center([
+            -73.99662137031554,
+             40.72706363348306
+        ])
+      //.scale(100)
+      .translate([width / 2, height / 2])
+
+    var path = d3.geoPath()
+      .projection(projection);
+
+    // ref: https://vanseodesign.com/web-design/svg-masking-examples-1/
+
+    svg.selectAll("path")
+        .data(geojson.features)
+        .enter().append("path")
+            .attr("id", (feature) => feature.id)
+            .attr("mask", "url(#mask-path)")
+            .attr("d", path);
+});
+
+/*
+
+<svg width="660" height="220" style="outline: 1px solid red">  
+ <defs>  
+   <mask id="mask-path" x="0" y="0" width="1" height="1">  
+     <path d="M0,0  l 75,100  150,75  -25,-125  Z" fill="#555" />  
+   </mask>  
+ </defs>
+ <circle cx="110" cy="110" r="100" fill="#9c6" mask="url(#mask-path)" />  
+</svg>
+
+ */
+
+</script>
