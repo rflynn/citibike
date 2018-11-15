@@ -32,7 +32,37 @@ var svg = d3.select("body").append("svg")
     .attr("width", width)
     .attr("height", height);
 
-svg.append("defs");
+var defs = svg.append("defs");
+
+var mask = defs.append("mask")
+    .attr("id", "mask-path");
+
+
+var projection = d3.geoMercator()
+  .scale(width / 2 / Math.PI * 1200)  // XXX: 1200 hardcoded :-P
+  .center([
+        -73.99662137031554,
+         40.72706363348306
+    ])
+  //.scale(100)
+  .translate([width / 2, height / 2])
+
+var path = d3.geoPath()
+  .projection(projection);
+
+
+var url = "neighborhoods-2018-11-15-11-16-59.json";
+d3.json(url, function(error, topology) {
+    if (error) throw error;
+    console.log("topojson", topology)
+    //var geojson = topojson.feature(topology, topology.objects.counties);
+    var geojson = topology;
+    console.log("geojson", geojson)
+    mask.selectAll("path")
+        .data(geojson.features)
+        .enter().append("path")
+            .attr("d", path);
+});
 
 var url = "https://gist.githubusercontent.com/mbostock/4090846/raw/d534aba169207548a8a3d670c9c2cc719ff05c47/us.json";
 //var url = "stations-voronoi-2018-11-15-08-55-18.json";
@@ -46,22 +76,8 @@ d3.json(url, function(error, topology) {
     console.log("geojson", geojson)
 
     // ref: https://stackoverflow.com/questions/14492284/center-a-map-in-d3-given-a-geojson-object
-    var projection = d3.geoMercator().fitSize([width, height], geojson);
-    var path = d3.geoPath().projection(projection);
-
-    var projection = d3.geoMercator()
-      .scale(width / 2 / Math.PI * 1200)  // XXX: 1200 hardcoded :-P
-      .center([
-            -73.99662137031554,
-             40.72706363348306
-        ])
-      //.scale(100)
-      .translate([width / 2, height / 2])
-
-    var path = d3.geoPath()
-      .projection(projection);
-
-    // ref: https://vanseodesign.com/web-design/svg-masking-examples-1/
+    //var projection = d3.geoMercator().fitSize([width, height], geojson);
+    //var path = d3.geoPath().projection(projection);
 
     svg.selectAll("path")
         .data(geojson.features)
@@ -72,6 +88,7 @@ d3.json(url, function(error, topology) {
 });
 
 /*
+// ref: https://vanseodesign.com/web-design/svg-masking-examples-1/
 
 <svg width="660" height="220" style="outline: 1px solid red">  
  <defs>  
