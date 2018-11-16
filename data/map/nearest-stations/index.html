@@ -977,21 +977,24 @@ function show_nearest_stations(latlng)
     }, 500);
 }
 
-
-map.on('click', function(ev) {
-    console.log(ev.latlng);
-});
-
-// moveend cannot be debounced...
-map.on('moveend', function(ev) {
-    console.log(ev.type);
-    var c = map.getCenter();
-    console.log('c', c);
-    // if run here, will trigger a never-ending loop
-    //show_nearest_stations([c.lat, c.lng]);
+function do_show_nearest_stations(latlng)
+{
     if (timerShowNearest)
         return;
-    timerShowNearest = setTimeout(show_nearest_stations, 0, [c.lat, c.lng]);
+    timerShowNearest = setTimeout(show_nearest_stations, 0, latlng);
+}
+
+map.on('click', function(ev) {
+    console.log(ev.type, ev.latlng);
+    map.setView(ev.latlng);
+    //do_show_nearest_stations(ev.latlng);
+});
+
+map.on('moveend', function(ev) {
+    console.log(ev.type, ev);
+    var c = map.getCenter();
+    console.log('c', c);
+    do_show_nearest_stations([c.lat, c.lng]);
 });
 
 map.on('locationfound', function(ev) {
