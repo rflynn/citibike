@@ -112,8 +112,8 @@ function nearest_stations(from)
     var mindist = Math.max(ds[0][0], 0.001);
     console.log('mindist', mindist);
     var i = 3;
-    // return between 3 and 7 stations, as long as they're "close enough"
-    while (i < ds.length && i < 7 && ds[i][0] <= mindist * 5)
+    // return between 3 and 12 stations, as long as they're "close enough"
+    while (i < ds.length && i < 12 && ds[i][0] <= mindist * 5)
         i++;
     return ds.slice(0, i);
 }
