@@ -1,10 +1,10 @@
 <!DOCTYPE html>
+<html>
+<head>
 <meta charset="utf-8">
 <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
-<head>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.4/dist/leaflet.css" integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA==" crossorigin=""/>
 <script src="https://unpkg.com/leaflet@1.3.4/dist/leaflet.js" integrity="sha512-nMMmRyTVoLYqjP9hrbed9S+FzjZHW5gY1TWCHA5ckwXZBadntCNs8kEqAWdrb9O7rxbCaA4lKTIWjDXZxflOcA==" crossorigin=""></script>
-<script src="//d3js.org/d3.v4.min.js"></script>
 <style>
 html, body, #map {
     width: 100%;
@@ -997,49 +997,5 @@ map.on('locationerror', function(ev) {
 
 var latlng = [40.751873, -73.977706];
 show_nearest_stations(latlng);
-
-/*
-var url = "stations-voronoi-2018-11-15-17-24-18.json";
-d3.json(url, function(error, geojson) {
-    if (error) throw error;
-    console.log("geojson", geojson)
-    for (var i = 0; i < geojson.features.length; i++)
-    {
-        var feature = geojson.features[i];
-        var geom = feature.geometry;
-        var props = feature.properties;
-        var config = props.config;
-        var stat = props.stat;
-        if (i == 0) {
-            console.log(i, props, feature);
-        }
-        for (var j = 0; j < geom.coordinates.length; j++) {
-            for (var k = 0; k < geom.coordinates[j].length; k++) {
-                var lnglat = geom.coordinates[j][k];
-                geom.coordinates[j][k] = [lnglat[1], lnglat[0]];
-            }
-        }
-        var pos = [+config.latitude, +config.longitude];
-        if (stat.bikes_available == 0) {
-            // console.log(geom.coordinates);
-            var polygon = L.polygon(geom.coordinates, {color: 'red'}).addTo(map);
-            //console.log(polygon);
-            L.marker(pos, {icon: redIcon}).addTo(map);
-        } else if (stat.bikes_available < 5) {
-            var polygon = L.polygon(geom.coordinates, {color: 'yellow'}).addTo(map);
-            L.marker(pos, {icon: yellowIcon}).addTo(map);
-        } else {
-            L.marker(pos, {icon: greenIcon}).addTo(map);
-        }
-    }
-    //svg.selectAll("path")
-    //    .data(geojson.features)
-    //    .enter().append("path")
-    //        .attr("id", (feature) => feature.id)
-    //        //.attr("mask", "url(#mask-path)")
-    //        .attr("data-bikes_available", (feature) => feature.properties.stat.bikes_available)
-    //        .attr("d", path);
-});
-*/
 
 </script>
