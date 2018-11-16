@@ -21,6 +21,9 @@ html, body, #map {
     top: 0;
     bottom: 0;
 }
+.leaflet-control-attribution {
+    font-size: 6pt !important;
+}
 </style>
 
 </head>
@@ -1003,7 +1006,7 @@ map.on('locationerror', function(ev) {
 var latlng = [40.751873, -73.977706];
 //show_nearest_stations(latlng);
 map.setView(latlng);
-map.setZoom(17); // one time
+map.setZoom(16); // one time
 
 // real shit
 //map.locate({setView: true, maxZoom: 18});
