@@ -78,7 +78,7 @@ var nyc = [
 var center = london;
 
 //var map = L.map('map').setView([51.505, -0.09], 13);
-var map = L.map('map').setView(nyc, 14);
+var map = L.map('map').setView(nyc, 14, {debounceMoveend:1000});
 
 L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
     maxZoom: 18,
@@ -112,8 +112,8 @@ function nearest_stations(from)
     var mindist = Math.max(ds[0][0], 0.001);
     console.log('mindist', mindist);
     var i = 3;
-    // return between 3 and 10 stations, as long as they're "close enough"
-    while (i < ds.length && i < 10 && ds[i][0] <= mindist * 5)
+    // return between 3 and 7 stations, as long as they're "close enough"
+    while (i < ds.length && i < 7 && ds[i][0] <= mindist * 5)
         i++;
     return ds.slice(0, i);
 }
@@ -942,26 +942,35 @@ var Stations = [
 ];
 
 
-// map.locate({setView: true, maxZoom: 16});
-
+var timerShowNearest = null;
+var shownMarkers = [];
 function show_nearest_stations(latlng)
 {
 
+    console.log('show_nearest_stations', latlng);
+
+    shownMarkers.forEach(function(m) {
+        map.removeLayer(m);
+    });
+
     // you are here
     var radius = 25;
-    L.marker(latlng).addTo(map)
-        .bindPopup("You").openPopup();
-    L.circle(latlng, radius).addTo(map);
-    map.setView(latlng, 17);
-    
-    
+    var c = L.circle(latlng, radius).addTo(map);
+        //.bindPopup("You").openPopup();
+    shownMarkers.push(c);
+    //map.setView(latlng, 17);
+    map.setZoom(17);
+
     // find stations...
     var nearest = nearest_stations(latlng);
     console.log('nearest', nearest);
+    nearest.reverse(); // popup for closest station last so it sticks
     nearest.forEach(function(x) {
-        L.marker(x[1].latlng).addTo(map).bindPopup(x[1].name).openPopup();
+        var m = L.marker(x[1].latlng).addTo(map).bindPopup(x[1].name).openPopup();
+        shownMarkers.push(m);
     });
-    
+
+
     // fit bounds of map
     var longs = nearest.map((x) => x[1].latlng[1]);
     longs.sort();
@@ -977,7 +986,11 @@ function show_nearest_stations(latlng)
     console.log('longs', longs);
     console.log('lats', lats);
     console.log('bounds', bounds);
-    map.fitBounds(bounds, 18);
+    map.fitBounds(bounds);
+    // debounce... :-/
+    setTimeout(function() { 
+        timerShowNearest = null;
+    }, 500);
 }
 
 
@@ -985,8 +998,16 @@ map.on('click', function(ev) {
     console.log(ev.latlng);
 });
 
+// moveend cannot be debounced...
 map.on('moveend', function(ev) {
     console.log(ev.type);
+    var c = map.getCenter();
+    console.log('c', c);
+    // if run here, will trigger a never-ending loop
+    //show_nearest_stations([c.lat, c.lng]);
+    if (timerShowNearest)
+        return;
+    timerShowNearest = setTimeout(show_nearest_stations, 0, [c.lat, c.lng]);
 });
 
 map.on('locationfound', function(ev) {
@@ -997,8 +1018,29 @@ map.on('locationerror', function(ev) {
     console.log(ev.type);
 });
 
+// fake shit
 var latlng = [40.751873, -73.977706];
-show_nearest_stations(latlng);
+//show_nearest_stations(latlng);
+map.setView(latlng);
+
+// real shit
+//map.locate({setView: true, maxZoom: 18});
+if (navigator.geolocation) {
+    var opts = {
+        enableHighAccuracy: true,
+        timeout: 5000,
+        maximumAge: 0
+    };
+    navigator.geolocation.getCurrentPosition(function(pos) {
+        lat = pos.coords.latitude;
+        long = pos.coords.longitude;
+        map.setView([lat, lng]);
+    },
+    function(poserr) {
+        console.log('getCurrentPosition', poserr);
+    },
+    opts);
+}
 
 </script>
 </body>
