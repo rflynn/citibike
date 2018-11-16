@@ -958,8 +958,6 @@ function show_nearest_stations(latlng)
     var c = L.circle(latlng, radius).addTo(map);
         //.bindPopup("You").openPopup();
     shownMarkers.push(c);
-    //map.setView(latlng, 17);
-    map.setZoom(17);
 
     // find stations...
     var nearest = nearest_stations(latlng);
@@ -970,23 +968,6 @@ function show_nearest_stations(latlng)
         shownMarkers.push(m);
     });
 
-
-    // fit bounds of map
-    var longs = nearest.map((x) => x[1].latlng[1]);
-    longs.sort();
-    var minlong = longs[0],
-        maxlong = longs[longs.length - 1];
-    var lats = nearest.map((x) => x[1].latlng[0]);
-    lats.sort();
-    var minlat = lats[0],
-        maxlat = lats[lats.length - 1];
-    var corner1 = L.latLng(minlat, minlong);
-    var corner2 = L.latLng(maxlat, maxlong);
-    var bounds = L.latLngBounds(corner1, corner2);
-    console.log('longs', longs);
-    console.log('lats', lats);
-    console.log('bounds', bounds);
-    map.fitBounds(bounds);
     // debounce... :-/
     setTimeout(function() { 
         timerShowNearest = null;
@@ -1022,6 +1003,7 @@ map.on('locationerror', function(ev) {
 var latlng = [40.751873, -73.977706];
 //show_nearest_stations(latlng);
 map.setView(latlng);
+map.setZoom(17); // one time
 
 // real shit
 //map.locate({setView: true, maxZoom: 18});
