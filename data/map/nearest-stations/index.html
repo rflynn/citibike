@@ -985,17 +985,16 @@ function do_show_nearest_stations(latlng)
     timerShowNearest = setTimeout(show_nearest_stations, 0, latlng);
 }
 
-map.on('click', function(ev) {
-    console.log(ev.type, ev.latlng);
-    map.setView(ev.latlng);
-    //do_show_nearest_stations(ev.latlng);
-});
-
 map.on('moveend', function(ev) {
     console.log(ev.type, ev);
     var c = map.getCenter();
     console.log('c', c);
     do_show_nearest_stations([c.lat, c.lng]);
+});
+
+map.on('click', function(ev) {
+    console.log(ev.type, ev.latlng);
+    map.setView(ev.latlng);
 });
 
 map.on('locationfound', function(ev) {
@@ -1019,7 +1018,6 @@ if (navigator.geolocation) {
         var lng = pos.coords.longitude;
         var latlng = [lat, lng];
         map.setView(latlng);
-        do_show_nearest_stations(latlng);
     },
     function(err) {
         console.log('getCurrentPosition error', err);
@@ -1029,7 +1027,6 @@ if (navigator.geolocation) {
         var latlng = [40.751873, -73.977706];
         var latlng = [40.761873, -73.987706];
         map.setView(latlng);
-        do_show_nearest_stations(latlng);
     },
     opts);
 }
