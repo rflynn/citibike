@@ -1017,7 +1017,9 @@ if (navigator.geolocation) {
         console.log('getCurrentPosition success', pos);
         var lat = pos.coords.latitude;
         var lng = pos.coords.longitude;
-        map.setView([lat, lng]);
+        var latlng = [lat, lng];
+        map.setView(latlng);
+        do_show_nearest_stations(latlng);
     },
     function(err) {
         console.log('getCurrentPosition error', err);
@@ -1027,6 +1029,7 @@ if (navigator.geolocation) {
         var latlng = [40.751873, -73.977706];
         var latlng = [40.761873, -73.987706];
         map.setView(latlng);
+        do_show_nearest_stations(latlng);
     },
     opts);
 }
