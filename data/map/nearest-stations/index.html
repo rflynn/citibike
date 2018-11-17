@@ -13,10 +13,7 @@ html, body, #map {
     padding: 0;
 }
 #map {
-    /*
-    width: 1000px;
-    height: 700px;
-    */
+    width: 80%;
     position: absolute;
     top: 0;
     left: 20%;
@@ -37,6 +34,11 @@ html, body, #map {
     font-family: verdana, sans-serif;
     white-space: pre;
 }
+pane div {
+    border: 1px;
+}
+#geocode_results {
+}
 </style>
 
 </head>
@@ -46,6 +48,19 @@ html, body, #map {
 <div id="pane">
 pane
     <div id="fromto"></div>
+
+    <div id="from">
+        from:
+        <input id="from_geocode_input" value="" onchange="do_get_geocode(this.value, 'from');">
+        <div id="from_geocode_results"/>
+    </div>
+
+    <div id="geocode">
+        to:
+        <input id="geocode_input" value="" onchange="do_get_geocode(this.value, 'to');">
+        <div id="geocode_results"/>
+    </div>
+
     <div id="directions"></div>
 </div>
 
@@ -116,14 +131,13 @@ map.setZoom(15); // one time
 var DirectionPolyline = null;
 function show_directions(dirs)
 {
-
     var pretty = JSON.stringify(dirs, null, 2);
     var steps = [];
     var latlngs = [];
-
+    // clean up
     if (DirectionPolyline)
         map.removeLayer(DirectionPolyline);
-
+    // draw new route...
     dirs.routes.forEach(function(rt) {
         rt.legs.forEach(function(leg) {
             leg.steps.forEach(function(step, i) {
@@ -144,6 +158,12 @@ function show_directions(dirs)
     var stepsPretty = JSON.stringify(steps, null, 2);
     document.getElementById('directions').innerText = stepsPretty;
     DirectionPolyline = L.polyline(latlngs, {color: 'red'}).addTo(map);
+    console.log('DirectionPolyline', DirectionPolyline);
+    console.log('latlngs', latlngs);
+    if (latlngs.length != 2 || latlngs[0].toString() != latlngs[1].toString()) { // javascript is an embarassing language
+        // don't zoom in to a single point, it's disorienting and pointless
+        map.fitBounds(DirectionPolyline.getBounds());
+    }
 }
 
 function get_directions(from, to)
@@ -155,7 +175,6 @@ function get_directions(from, to)
     var url = ('https://api.mapbox.com/directions/v5/mapbox/cycling/'
                 + fromstr + ';' + tostr + '?steps=true&access_token=' + accessToken
                );
-
     req.open('GET', url, true);
     req.onreadystatechange = function () {
         switch (req.readyState) {
@@ -177,6 +196,107 @@ function get_directions(from, to)
     }
     req.send();
 }
+
+var StationClicked = [];
+var LocFrom = null;
+var LocTo = null;
+function station_clicked_push(obj)
+{
+    console.log('station_clicked_push', obj);
+    console.log('StationClicked', StationClicked);
+
+    StationClicked.push(obj);
+
+    if (StationClicked.length == 1) {
+        document.getElementById('from_geocode_results').innerHTML = JSON.stringify(StationClicked[0]);
+    } else if (StationClicked.length >= 2) {
+        document.getElementById('geocode_results').innerHTML = JSON.stringify(StationClicked[StationClicked.length-1]);
+        station_directions(StationClicked[StationClicked.length-2],
+                           StationClicked[StationClicked.length-1]);
+    }
+}
+
+function show_geocode(geoResults)
+{
+    if (GeoCodeTimer) {
+        clearTimeout(GeoCodeTimer);
+        GeoCodeTimer = null;
+    }
+    var geoSimpler = [];
+    if (geoResults.features) {
+        geoResults.features.forEach(function(f) {
+            if (!f.place_type.includes('neighborhood') && f.properties) {
+                geoSimpler.push({
+                    place_name: f.place_name,
+                    address: f.properties.address,
+                    tel: f.properties.tel,
+                    category: f.properties.category,
+                    center: f.center,
+                    latlng: f.center,
+                    geometry: f.geometry
+                });
+            }
+        });
+    }
+    if (geoSimpler) {
+
+        var dest = geoSimpler[0];
+        console.log('dest', dest);
+        var nst = nearest_stations(rev(dest.latlng));
+        console.log('nst', nst);
+        var st = nst[0][1];
+        console.log('st', st);
+        station_clicked_push(st);
+    }
+    var geoPretty = JSON.stringify(geoSimpler, null, 2);
+    document.getElementById('geocode_results').innerText = geoPretty;
+}
+
+var GeoCodeTimer = null;
+function do_get_geocode(searchstr)
+{
+    if (GeoCodeTimer)
+        clearTimeout(GeoCodeTimer);
+    GeoCodeTimer = setTimeout(get_geocode, 500, searchstr);
+}
+
+function get_geocode(searchstr)
+{
+    var gct='-73.977718,40.751956'
+    // hardcoded for ~5 borough-ish + a little but of NJ
+    var bbox='-74.076861,40.587005,-73.733688,40.858649'
+    var searchencoded = encodeURI(searchstr);
+    var req = new XMLHttpRequest();
+    // ref: https://www.mapbox.com/api-documentation/?language=cURL#search-for-places
+    var url = ('https://api.mapbox.com/geocoding/v5/mapbox.places/'
+                + searchencoded + '.json'
+                + '?proximity= ' + gct
+                + '&bbox=' + bbox
+                + '&access_token=' + accessToken
+    );
+    req.open('GET', url, true);
+    req.onreadystatechange = function () {
+        switch (req.readyState) {
+        case 4:
+            switch (req.status) {
+            case 200:
+                console.log('done', req);
+                show_geocode(JSON.parse(req.responseText));
+                break;
+            default:
+                console.log('error', req);
+                break;
+            }
+            break;
+        default:
+            //console.log('readyState', req.readyState, req);
+            break;
+        }
+    }
+    req.send();
+
+}
+
 
 
 
@@ -1060,7 +1180,6 @@ function show_nearest_stations(latlng)
     }, 500);
 }
 
-var StationClicked = [];
 function show_all_stations(latlng)
 {
     shownMarkers.forEach(function(m) {
@@ -1070,12 +1189,7 @@ function show_all_stations(latlng)
         var m = L.marker(st.latlng).addTo(map).bindPopup(st.name); //.openPopup();
         m.on('click', function(ev) {
             //alert("click");
-            StationClicked.push(st);
-            if (StationClicked.length > 10)
-                StationClicked = StationClicked.slice(1);
-            if (StationClicked.length >= 2)
-                station_directions(StationClicked[StationClicked.length-2],
-                                   StationClicked[StationClicked.length-1]);
+            station_clicked_push(st);
         });
         shownMarkers.push(m);
     });
@@ -1132,6 +1246,7 @@ if (navigator.geolocation) {
         var lat = pos.coords.latitude;
         var lng = pos.coords.longitude;
         var latlng = [lat, lng];
+        station_clicked_push({type: 'getCurrentPosition', latlng: latlng})
         map.setView(latlng);
     },
     function(err) {
@@ -1139,8 +1254,8 @@ if (navigator.geolocation) {
         alert("geolocation failed: " + JSON.stringify(err));
 
         // fake shit
-        var latlng = [40.751873, -73.977706];
         var latlng = [40.761873, -73.987706];
+        station_clicked_push({type: 'getCurrentPosition', fake: true, latlng: latlng})
         map.setView(latlng);
     },
     opts);
