@@ -1012,7 +1012,6 @@ map.setView(latlng);
 map.setZoom(16); // one time
 
 // real shit
-//map.locate({setView: true, maxZoom: 18});
 if (navigator.geolocation) {
     var opts = {
         enableHighAccuracy: true,
@@ -1020,12 +1019,14 @@ if (navigator.geolocation) {
         maximumAge: 0
     };
     navigator.geolocation.getCurrentPosition(function(pos) {
+        console.log('getCurrentPosition success', pos);
         var lat = pos.coords.latitude;
         var lng = pos.coords.longitude;
         map.setView([lat, lng]);
     },
-    function(poserr) {
-        console.log('getCurrentPosition', poserr);
+    function(err) {
+        console.log('getCurrentPosition error', err);
+        alert("geolocation failed: " + JSON.stringify(err));
     },
     opts);
 }
