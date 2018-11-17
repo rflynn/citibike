@@ -81,7 +81,8 @@ var nyc = [
 var center = london;
 
 //var map = L.map('map').setView([51.505, -0.09], 13);
-var map = L.map('map').setView(nyc, 14, {debounceMoveend:1000});
+var map = L.map('map'); //.setView(nyc, 16);
+map.setZoom(16); // one time
 
 L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
     maxZoom: 18,
@@ -1005,12 +1006,6 @@ map.on('locationerror', function(ev) {
     console.log(ev.type);
 });
 
-// fake shit
-var latlng = [40.751873, -73.977706];
-//show_nearest_stations(latlng);
-map.setView(latlng);
-map.setZoom(16); // one time
-
 // real shit
 if (navigator.geolocation) {
     var opts = {
@@ -1027,6 +1022,11 @@ if (navigator.geolocation) {
     function(err) {
         console.log('getCurrentPosition error', err);
         alert("geolocation failed: " + JSON.stringify(err));
+
+        // fake shit
+        var latlng = [40.751873, -73.977706];
+        var latlng = [40.761873, -73.987706];
+        map.setView(latlng);
     },
     opts);
 }
