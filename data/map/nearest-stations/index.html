@@ -1020,8 +1020,8 @@ if (navigator.geolocation) {
         maximumAge: 0
     };
     navigator.geolocation.getCurrentPosition(function(pos) {
-        lat = pos.coords.latitude;
-        long = pos.coords.longitude;
+        var lat = pos.coords.latitude;
+        var lng = pos.coords.longitude;
         map.setView([lat, lng]);
     },
     function(poserr) {
