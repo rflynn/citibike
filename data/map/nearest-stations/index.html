@@ -5,6 +5,7 @@
 <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.4/dist/leaflet.css" integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA==" crossorigin=""/>
 <script src="https://unpkg.com/leaflet@1.3.4/dist/leaflet.js" integrity="sha512-nMMmRyTVoLYqjP9hrbed9S+FzjZHW5gY1TWCHA5ckwXZBadntCNs8kEqAWdrb9O7rxbCaA4lKTIWjDXZxflOcA==" crossorigin=""></script>
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 <style>
 html, body, #map {
     width: 100%;
@@ -37,10 +38,9 @@ html, body, #map {
 pane div {
     border: 1px;
 }
-#geocode_results {
-}
 </style>
-
+<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 </head>
 <body>
 <div id="map"></div>
@@ -51,20 +51,91 @@ pane
 
     <div id="from">
         from:
-        <input id="from_geocode_input" value="" onchange="do_get_geocode(this.value, 'from');">
+        <input id="from_input" value="" onfocus="focusto('from');" onchange="do_get_geocode(this.value, 'from');">
         <div id="from_geocode_results"/>
     </div>
 
     <div id="geocode">
         to:
-        <input id="geocode_input" value="" onchange="do_get_geocode(this.value, 'to');">
-        <div id="geocode_results"/>
+        <input id="to_input" value="" onfocus="focusto('to');"  onchange="do_get_geocode(this.value, 'to');">
+        <div id="to_geocode_results"/>
     </div>
 
+    Directions
+    <label for="directions_distance">distance (m)</label>
+        <div id="directions_distance"></div>
+    <label for="directions">Steps</label>
     <div id="directions"></div>
 </div>
 
+
+
+
 <script>
+
+    var projects = [
+      {
+        value: "jquery",
+        label: "jQuery",
+        desc: "the write less, do more, JavaScript library",
+        icon: "jquery_32x32.png"
+      },
+      {
+        value: "jquery-ui",
+        label: "jQuery UI",
+        desc: "the official user interface library for jQuery",
+        icon: "jqueryui_32x32.png"
+      },
+      {
+        value: "sizzlejs",
+        label: "Sizzle JS",
+        desc: "a pure-JavaScript CSS selector engine",
+        icon: "sizzlejs_32x32.png"
+      }
+    ];
+
+  $( function() {
+
+    $( "#to_input" ).autocomplete({
+      minLength: 1,
+      source: projects,
+      focus: function( event, ui ) {
+        $( "#to_input" ).val( ui.item.label );
+        return false;
+      },
+      select: function( event, ui ) {
+        $( "#to_input" ).val( ui.item.label );
+        //$( "#project-id" ).val( ui.item.value );
+        //$( "#project-description" ).html( ui.item.desc );
+        //$( "#project-icon" ).attr( "src", "images/" + ui.item.icon );
+ 
+        return false;
+      }
+    })
+    .autocomplete( "instance" )._renderItem = function( ul, item ) {
+      return $( "<li>" )
+        .append( "<div>" + item.label + "<br>" + item.desc + "</div>" )
+        .appendTo( ul );
+    };
+  } );
+</script>
+
+
+<script>
+var FocusFromOrTo = 'from';
+focusto('from');
+function focusto(f)
+{
+    if (f == 'from') {
+        FocusFromOrTo = 'from';
+        document.getElementById('from_input').focus();
+    } else if (f == 'to') {
+        FocusFromOrTo = 'to';
+        document.getElementById('to_input').focus();
+    } else {
+        throw 'unknown focus: ' + f;
+    }
+}
 
 console.log('script running...');
 
@@ -98,38 +169,32 @@ var redIcon = new L.Icon({
 //L.marker([51.5, -0.09], {icon: greenIcon}).addTo(map);
 
 
-var london = [51.505, -0.09];
 var nyc = [
-         40.72706363348306,
-        -73.99662137031554
-    ];
-var center = london;
+    40.72706363348306,
+   -73.99662137031554
+];
 
-//var map = L.map('map').setView([51.505, -0.09], 13);
 var map = L.map('map'); //.setView(nyc, 16);
 
 var accessToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
 
-L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+//L.tileLayer('https://a.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}@2x.png?access_token={accessToken}', {
+L.tileLayer('https://a.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}{retina}.png?access_token={accessToken}', {
     maxZoom: 18,
     attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
         '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
         'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
     id: 'mapbox.streets',
-    accessToken: accessToken
+    accessToken: accessToken,
+    retina: navigator.appVersion.match(/iPhone/) ? '' : navigator.appVersion.match(/Mac OS/) ? '@2x' : ''
 }).addTo(map);
 
 L.control.scale().addTo(map);
 map.setZoom(15); // one time
 
-//var marker = L.marker([51.5, -0.09]).addTo(map);
-//var marker = L.marker(nyc).addTo(map);
-//map.setView(nyc, 16);
-
-
 
 var DirectionPolyline = null;
-function show_directions(dirs)
+function show_directions(from, to, dirs)
 {
     var pretty = JSON.stringify(dirs, null, 2);
     var steps = [];
@@ -157,6 +222,7 @@ function show_directions(dirs)
     });
     var stepsPretty = JSON.stringify(steps, null, 2);
     document.getElementById('directions').innerText = stepsPretty;
+    document.getElementById('directions_distance').innerText = steps.reduce((acc, item) => acc + item.distance, 0);
     DirectionPolyline = L.polyline(latlngs, {color: 'red'}).addTo(map);
     console.log('DirectionPolyline', DirectionPolyline);
     console.log('latlngs', latlngs);
@@ -182,7 +248,7 @@ function get_directions(from, to)
             switch (req.status) {
             case 200:
                 console.log('done', req);
-                show_directions(JSON.parse(req.responseText));
+                show_directions(from, to, JSON.parse(req.responseText));
                 break;
             default:
                 console.log('error', req);
@@ -197,23 +263,45 @@ function get_directions(from, to)
     req.send();
 }
 
-var StationClicked = [];
-var LocFrom = null;
-var LocTo = null;
+var LocHistory = [];
+var LocFrom = {
+    obj: null,
+    nearby_stations: []
+};
+var LocTo = {
+    obj: null,
+    nearby_stations: []
+};
 function station_clicked_push(obj)
 {
     console.log('station_clicked_push', obj);
-    console.log('StationClicked', StationClicked);
 
-    StationClicked.push(obj);
+    LocHistory.push(obj);
+    console.log('LocHistory', LocHistory);
 
-    if (StationClicked.length == 1) {
-        document.getElementById('from_geocode_results').innerHTML = JSON.stringify(StationClicked[0]);
-    } else if (StationClicked.length >= 2) {
-        document.getElementById('geocode_results').innerHTML = JSON.stringify(StationClicked[StationClicked.length-1]);
-        station_directions(StationClicked[StationClicked.length-2],
-                           StationClicked[StationClicked.length-1]);
+    if (FocusFromOrTo == 'from') {
+        LocFrom.obj = obj;
+        // update from_input
+        if (LocFrom.obj.name) {
+            document.getElementById('from_input').value = LocFrom.obj.name;
+        } else {
+            document.getElementById('from_input').value = '';
+        }
+        document.getElementById('from_geocode_results').innerHTML = JSON.stringify(LocFrom.obj);
+        focusto('to');
+    } else if (FocusFromOrTo == 'to') {
+        LocTo.obj = obj;
+        if (LocTo.obj.name) {
+            document.getElementById('to_input').value = LocTo.obj.name;
+        } else {
+            document.getElementById('to_input').value = '';
+        }
+        document.getElementById('to_geocode_results').innerHTML = JSON.stringify(LocTo.obj);
     }
+
+	if (LocFrom.obj !== null && LocTo.obj !== null) {
+        station_directions(LocFrom.obj, LocTo.obj);
+	}
 }
 
 function show_geocode(geoResults)
@@ -223,34 +311,76 @@ function show_geocode(geoResults)
         GeoCodeTimer = null;
     }
     var geoSimpler = [];
+    console.log('geoResults', geoResults);
     if (geoResults.features) {
         geoResults.features.forEach(function(f) {
             if (!f.place_type.includes('neighborhood') && f.properties) {
                 geoSimpler.push({
+                    name: f.text,
                     place_name: f.place_name,
                     address: f.properties.address,
                     tel: f.properties.tel,
                     category: f.properties.category,
                     center: f.center,
-                    latlng: f.center,
+                    latlng: rev(f.center),
                     geometry: f.geometry
                 });
             }
         });
     }
     if (geoSimpler) {
-
         var dest = geoSimpler[0];
         console.log('dest', dest);
         var nst = nearest_stations(rev(dest.latlng));
         console.log('nst', nst);
-        var st = nst[0][1];
-        console.log('st', st);
-        station_clicked_push(st);
+        var nst2 = nst.map((x) => x[1]);
+        if (FocusFromOrTo == 'from') {
+            LocFrom.nearby_stations = nst2;
+        } else if (FocusFromOrTo == 'to') {
+            LocTo.nearby_stations = nst2;
+        }
+        station_clicked_push(dest);
     }
-    var geoPretty = JSON.stringify(geoSimpler, null, 2);
-    document.getElementById('geocode_results').innerText = geoPretty;
+    show_geocode_results(geoSimpler);
 }
+
+function show_geocode_results(geoSimpler)
+{
+    var divId = (FocusFromOrTo == 'from' ? 'from_geocode_results' : FocusFromOrTo == 'to' ? 'to_geocode_results': null);
+    var divShow = document.getElementById(divId);
+    divShow.innerHTML = '';
+    divShow.appendChild(tableCreate());
+    var geoPretty = document.createTextNode(JSON.stringify(geoSimpler, null, 2));
+    if (FocusFromOrTo == 'from') {
+        document.getElementById('from_geocode_results').appendChild(geoPretty);
+    } else if (FocusFromOrTo == 'to') {
+        document.getElementById('to_geocode_results').appendChild(geoPretty);
+    }
+}
+
+function tableCreate()
+{
+    var tbl = document.createElement('table');
+    tbl.style.border = '1px solid black';
+
+    for(var i = 0; i < 3; i++){
+        var tr = tbl.insertRow();
+        for(var j = 0; j < 2; j++){
+            if(i == 2 && j == 1){
+                break;
+            } else {
+                var td = tr.insertCell();
+                td.appendChild(document.createTextNode('Cell'));
+                //td.style.border = '1px solid black';
+                if(i == 1 && j == 1){
+                    td.setAttribute('rowSpan', '2');
+                }
+            }
+        }
+    }
+    return tbl;
+}
+
 
 var GeoCodeTimer = null;
 function do_get_geocode(searchstr)
@@ -1253,10 +1383,10 @@ if (navigator.geolocation) {
         console.log('getCurrentPosition error', err);
         alert("geolocation failed: " + JSON.stringify(err));
 
-        // fake shit
+        // set map to manhattan, but don't count it as "from"...
         var latlng = [40.761873, -73.987706];
-        station_clicked_push({type: 'getCurrentPosition', fake: true, latlng: latlng})
-        map.setView(latlng);
+        //station_clicked_push({type: 'getCurrentPosition', fake: true, latlng: latlng})
+        map.setView(latlng, 15);
     },
     opts);
 }
