@@ -45,38 +45,54 @@ pane div {
 
 
 <script>
-/*
 $(document).ready( function() {
+
+$( "#from_input" ).autocomplete({
+    minLength: 1,
+    source: function( request, response ) {
+        console.log('autocomplete request', JSON.stringify(request));
+        do_get_geocode(request.term, response);
+    },
+    focus: function( event, ui ) {
+        $( "#from_input" ).val( ui.item.label );
+        return false;
+    },
+    select: function( event, ui ) {
+        $( "#from_input" ).val( ui.item.name );
+        station_clicked_push(ui.item);
+        return false;
+    }
+})
+.autocomplete( "instance" )._renderItem = function( ul, item ) {
+  return $( "<li>" )
+    .append( "<div>" + item.name + "<br>" + item.place_name + "</div>" )
+    .appendTo( ul );
+};
+
 $( "#to_input" ).autocomplete({
     minLength: 1,
-    source: projects,
     source: function( request, response ) {
-        do_get_geocode(request.term);
-        // XXX: FIXME: TODO: need to wire up response(...), and in order to do that, need to refactor show_geocode...
+        console.log('autocomplete request', JSON.stringify(request));
+        do_get_geocode(request.term, response);
     },
     focus: function( event, ui ) {
         $( "#to_input" ).val( ui.item.label );
         return false;
     },
     select: function( event, ui ) {
-        $( "#to_input" ).val( ui.item.label );
-        //$( "#project-id" ).val( ui.item.value );
-        //$( "#project-description" ).html( ui.item.desc );
-        //$( "#project-icon" ).attr( "src", "images/" + ui.item.icon );
+        $( "#to_input" ).val( ui.item.name );
+        station_clicked_push(ui.item);
         return false;
     }
 })
 .autocomplete( "instance" )._renderItem = function( ul, item ) {
   return $( "<li>" )
-    .append( "<div>" + item.label + "<br>" + item.desc + "</div>" )
+    .append( "<div>" + item.name + "<br>" + item.place_name + "</div>" )
     .appendTo( ul );
 };
+
 });
-*/
 </script>
-
-
-
 
 
 </head>
@@ -89,13 +105,13 @@ pane
 
     <div id="from">
         from:
-        <input id="from_input" value="" onfocus="focusto('from');" onchange="do_get_geocode(this.value, 'from');">
+        <input id="from_input" value="" onfocus="focusto('from');" onchange="do_get_geocode(this.value);">
         <div id="from_geocode_results"/>
     </div>
 
     <div id="geocode">
         to:
-        <input id="to_input" value="" onfocus="focusto('to');"  onchange="do_get_geocode(this.value, 'to');"> <button title="Reverse 'from' and 'to'" onclick="reverse_from_and_to()">&#x21D5;</button>
+        <input id="to_input" value="" onfocus="focusto('to');"  onchange="do_get_geocode(this.value);"> <button title="Reverse 'from' and 'to'" onclick="reverse_from_and_to()">&#x21D5;</button>
         <div id="to_geocode_results"/>
     </div>
 
@@ -184,7 +200,7 @@ map.setZoom(15); // one time
 
 
 var DirectionPolyline = null;
-function show_directions(from, to, dirs)
+function display_directions(from, to, dirs)
 {
     var pretty = JSON.stringify(dirs, null, 2);
     var steps = [];
@@ -220,14 +236,48 @@ function show_directions(from, to, dirs)
         // don't zoom in to a single point, it's disorienting and pointless
         map.fitBounds(DirectionPolyline.getBounds());
     }
+
+    display_nearby_stations(from, to);
+
+}
+
+
+function display_nearby_stations(from, to)
+{
+    do_display_nearby_stations(from);
+    do_display_nearby_stations(to);
+
+    /*
+    if (FocusFromOrTo == 'from') {
+        LocFrom.nearby_stations = nst2;
+    } else if (FocusFromOrTo == 'to') {
+        LocTo.nearby_stations = nst2;
+    }
+    */
+}
+
+function do_display_nearby_stations(obj)
+{
+    console.log('do_display_nearby_stations', obj);
+    var nst = nearest_stations(obj.latlng);
+    console.log('nst', nst);
+    var stations = nst.map((x) => x[1]);
+    stations.forEach(function(st) {
+        var m = L.marker(st.latlng).addTo(map).bindPopup(st.name);
+        shownMarkers.push(m);
+    });
 }
 
 function get_directions(from, to)
 {
     document.getElementById('fromto').innerText = '' + from + ', ' + to;
+
+    var fromlatlng = rev(from.latlng);
+    var tolatlng = rev(to.latlng);
+
     var req = new XMLHttpRequest();
-    fromstr = from[0] + ',' + from[1];
-    tostr = to[0] + ',' + to[1];
+    fromstr = fromlatlng[0] + ',' + fromlatlng[1];
+    tostr = tolatlng[0] + ',' + tolatlng[1];
     var url = ('https://api.mapbox.com/directions/v5/mapbox/cycling/'
                 + fromstr + ';' + tostr + '?steps=true&access_token=' + accessToken
                );
@@ -238,7 +288,7 @@ function get_directions(from, to)
             switch (req.status) {
             case 200:
                 console.log('done', req);
-                show_directions(from, to, JSON.parse(req.responseText));
+                display_directions(from, to, JSON.parse(req.responseText));
                 break;
             default:
                 console.log('error', req);
@@ -305,18 +355,19 @@ function update_to_input()
 function maybe_look_up_directions()
 {
     if (LocFrom.obj !== null && LocTo.obj !== null) {
-        station_directions(LocFrom.obj, LocTo.obj);
+        look_up_directions(LocFrom.obj, LocTo.obj);
     }
 }
 
-function show_geocode(geoResults)
+function show_geocode(geoResults, callback)
 {
     // filter results to non-neighborhoods, and selectively filter attributes
     var geoSimpler = [];
     console.log('geoResults', geoResults);
     if (geoResults.features) {
         geoResults.features.forEach(function(f) {
-            if (!f.place_type.includes('neighborhood') && f.properties) {
+            //if (!f.place_type.includes('neighborhood') && f.properties) {
+            if (true) {
                 geoSimpler.push({
                     name: f.text,
                     place_name: f.place_name,
@@ -330,21 +381,8 @@ function show_geocode(geoResults)
             }
         });
     }
-    // take results, update global state and "apply" it
-    if (geoSimpler) {
-        var dest = geoSimpler[0];
-        console.log('dest', dest);
-        var nst = nearest_stations(rev(dest.latlng));
-        console.log('nst', nst);
-        var nst2 = nst.map((x) => x[1]);
-        if (FocusFromOrTo == 'from') {
-            LocFrom.nearby_stations = nst2;
-        } else if (FocusFromOrTo == 'to') {
-            LocTo.nearby_stations = nst2;
-        }
-        station_clicked_push(dest);
-    }
-    show_geocode_results(geoSimpler);
+    callback(geoSimpler);
+
 }
 
 function show_geocode_results(geoSimpler)
@@ -399,18 +437,17 @@ function reverse_from_and_to()
 
 
 var GeoCodeTimer = null;
-function do_get_geocode(searchstr)
+function do_get_geocode(searchstr, callback)
 {
     if (GeoCodeTimer) {
         clearTimeout(GeoCodeTimer);
         GeoCodeTimer = null;
     }
-    GeoCodeTimer = setTimeout(get_geocode, 500, searchstr);
+    GeoCodeTimer = setTimeout(get_geocode, 500, searchstr, callback);
 }
 
-function get_geocode(searchstr)
+function get_geocode(searchstr, callback)
 {
-    var callback = show_geocode;
     var gct='-73.977718,40.751956'
     // hardcoded for ~5 borough-ish + a little but of NJ
     var bbox='-74.076861,40.587005,-73.733688,40.858649'
@@ -430,7 +467,7 @@ function get_geocode(searchstr)
             switch (req.status) {
             case 200:
                 console.log('done', req);
-                callback(JSON.parse(req.responseText));
+                show_geocode(JSON.parse(req.responseText), callback);
                 break;
             default:
                 console.log('error', req);
@@ -466,8 +503,8 @@ function nearest_stations(from)
     var mindist = Math.max(ds[0][0], 0.001);
     console.log('mindist', mindist);
     var i = 3;
-    // return between 3 and 12 stations, as long as they're "close enough"
-    while (i < ds.length && i < 12 && ds[i][0] <= mindist * 10)
+    // return between 3 and 7 stations, as long as they're "close enough"
+    while (i < ds.length && i < 7 && ds[i][0] <= mindist * 3)
         i++;
     return ds.slice(0, i);
 }
@@ -1348,11 +1385,9 @@ function rev(ll)
     return [ll[1], ll[0]];
 }
 
-function station_directions(stfrom, stto)
+function look_up_directions(from, to)
 {
-    fromlatlng = stfrom.latlng;
-    tolatlng = stto.latlng;
-    get_directions(rev(fromlatlng), rev(tolatlng))
+    get_directions(from, to);
 }
 
 function do_show_all_stations(latlng)
@@ -1366,7 +1401,7 @@ map.on('moveend', function(ev) {
     console.log(ev.type, ev);
     var c = map.getCenter();
     console.log('c', c);
-    do_show_all_stations([c.lat, c.lng]);
+    //do_show_all_stations([c.lat, c.lng]);
 });
 
 map.on('click', function(ev) {
@@ -1394,7 +1429,7 @@ if (navigator.geolocation) {
         var lat = pos.coords.latitude;
         var lng = pos.coords.longitude;
         var latlng = [lat, lng];
-        station_clicked_push({type: 'getCurrentPosition', latlng: latlng})
+        station_clicked_push({name: 'current location', place_name: '', latlng: latlng, type: 'getCurrentPosition'})
         map.setView(latlng);
     },
     function(err) {
