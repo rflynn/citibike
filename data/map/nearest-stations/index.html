@@ -311,10 +311,7 @@ function maybe_look_up_directions()
 
 function show_geocode(geoResults)
 {
-    if (GeoCodeTimer) {
-        clearTimeout(GeoCodeTimer);
-        GeoCodeTimer = null;
-    }
+    // filter results to non-neighborhoods, and selectively filter attributes
     var geoSimpler = [];
     console.log('geoResults', geoResults);
     if (geoResults.features) {
@@ -333,6 +330,7 @@ function show_geocode(geoResults)
             }
         });
     }
+    // take results, update global state and "apply" it
     if (geoSimpler) {
         var dest = geoSimpler[0];
         console.log('dest', dest);
@@ -403,14 +401,16 @@ function reverse_from_and_to()
 var GeoCodeTimer = null;
 function do_get_geocode(searchstr)
 {
-    if (GeoCodeTimer)
+    if (GeoCodeTimer) {
         clearTimeout(GeoCodeTimer);
+        GeoCodeTimer = null;
+    }
     GeoCodeTimer = setTimeout(get_geocode, 500, searchstr);
 }
 
-function get_geocode(searchstr, callback)
+function get_geocode(searchstr)
 {
-    callback = callback || show_geocode;
+    var callback = show_geocode;
     var gct='-73.977718,40.751956'
     // hardcoded for ~5 borough-ish + a little but of NJ
     var bbox='-74.076861,40.587005,-73.733688,40.858649'
