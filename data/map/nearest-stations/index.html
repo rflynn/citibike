@@ -52,8 +52,8 @@ td.r {
     display: none;
 }
 
-#from_geocode_results,
-#to_geocode_results
+#from_loc_details,
+#to_loc_details
 {
     font-size: x-small;
 }
@@ -122,12 +122,12 @@ $( "#to_input" ).autocomplete({
 <div id="pane">
     <div id="from" class="loc_entry">
         <input id="from_input" placeholder="from" value="" onfocus="focusto('from');" onchange="do_get_geocode(this.value);">
-        <div id="from_geocode_results"></div>
+        <div id="from_loc_details"></div>
     </div>
 
     <div id="to" class="loc_entry">
         <input id="to_input" placeholder="to" value="" onfocus="focusto('to');"  onchange="do_get_geocode(this.value);"> <button title="Reverse 'from' and 'to'" onclick="reverse_from_and_to()">&#x21D5;</button>
-        <div id="to_geocode_results"></div>
+        <div id="to_loc_details"></div>
     </div>
 
     <div id="dir_holder">
@@ -455,9 +455,8 @@ function update_from_input()
     }
 
     $('#from_input').val(LocFrom.obj.name || '');
-    $('#from_geocode_results').html(
-        LocFrom.obj.name
-        + (LocFrom.obj.category ? '<br>' + LocFrom.obj.category : '')
+    $('#from_loc_details').html(
+        (LocFrom.obj.category ? LocFrom.obj.category : '')
         + (LocFrom.obj.place_name ? '<br>' + LocFrom.obj.place_name : '')
     );
 }
@@ -465,9 +464,8 @@ function update_from_input()
 function update_to_input()
 {
     $('#to_input').val(LocTo.obj.name || '');
-    $('#to_geocode_results').html(
-        LocTo.obj.name
-        + (LocTo.obj.category ? '<br>' + LocTo.obj.category : '')
+    $('#to_loc_details').html(
+        (LocTo.obj.category ? LocTo.obj.category : '')
         + (LocTo.obj.place_name ? '<br>' + LocTo.obj.place_name : '')
     );
 }
@@ -481,12 +479,10 @@ function maybe_look_up_directions()
 
 function show_geocode(geoResults, callback)
 {
-    // filter results to non-neighborhoods, and selectively filter attributes
     var geoSimpler = [];
     console.log('geoResults', geoResults);
     if (geoResults.features) {
         geoResults.features.forEach(function(f) {
-            //if (!f.place_type.includes('neighborhood') && f.properties) {
             if (true) {
                 geoSimpler.push({
                     name: f.text,
@@ -503,43 +499,6 @@ function show_geocode(geoResults, callback)
     }
     callback(geoSimpler);
 
-}
-
-function show_geocode_results(geoSimpler)
-{
-    var divId = (FocusFromOrTo == 'from' ? 'from_geocode_results' : FocusFromOrTo == 'to' ? 'to_geocode_results': null);
-    var divShow = document.getElementById(divId);
-    divShow.innerHTML = '';
-    divShow.appendChild(tableCreate());
-    var geoPretty = document.createTextNode(JSON.stringify(geoSimpler, null, 2));
-    if (FocusFromOrTo == 'from') {
-        document.getElementById('from_geocode_results').appendChild(geoPretty);
-    } else if (FocusFromOrTo == 'to') {
-        document.getElementById('to_geocode_results').appendChild(geoPretty);
-    }
-}
-
-function tableCreate()
-{
-    var tbl = document.createElement('table');
-    tbl.style.border = '1px solid black';
-
-    for(var i = 0; i < 3; i++){
-        var tr = tbl.insertRow();
-        for(var j = 0; j < 2; j++){
-            if(i == 2 && j == 1){
-                break;
-            } else {
-                var td = tr.insertCell();
-                td.appendChild(document.createTextNode('Cell'));
-                //td.style.border = '1px solid black';
-                if(i == 1 && j == 1){
-                    td.setAttribute('rowSpan', '2');
-                }
-            }
-        }
-    }
-    return tbl;
 }
 
 
