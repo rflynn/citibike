@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.4/dist/leaflet.css" integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA==" crossorigin=""/>
 <script src="https://unpkg.com/leaflet@1.3.4/dist/leaflet.js" integrity="sha512-nMMmRyTVoLYqjP9hrbed9S+FzjZHW5gY1TWCHA5ckwXZBadntCNs8kEqAWdrb9O7rxbCaA4lKTIWjDXZxflOcA==" crossorigin=""></script>
 <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
@@ -12,11 +12,11 @@ html, body, #map {
     padding: 0;
 }
 #map {
-    width: 75vw;
+    width: 100vw;
     height: 100vh;
     position: absolute;
     top: 0;
-    left: 25vw;
+    left: 0;
     bottom: 0;
     z-index: 1;
 }
@@ -24,17 +24,18 @@ html, body, #map {
     font-size: 6pt !important;
 }
 #pane {
-    height: 100vh;
-    width: 25vw;
+    margin: 5px;
+    /*height: 100vh;*/
+    max-width: 25vw;
     top: 0;
-    bottom: 0;
+    /*bottom: 0;*/
     position: absolute;
     z-index: 2;
     background-color: #fff;
     font-size: small;
     font-family: sans-serif;
 }
-pane div {
+#directions directions_raw {
     white-space: pre;
 }
 .loc_entry {
@@ -43,7 +44,7 @@ pane div {
 table.dirs {
     margin: 1px;
     width: 100%;
-    border: 1px solid #ccc;
+    border: 0px solid #ccc;
 }
 td.r {
     text-align: right;
@@ -57,6 +58,10 @@ td.r {
 {
     font-size: x-small;
 }
+.ui-accordion-content {
+    padding-left: 0;
+    padding-right: 0;
+}
 </style>
 <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
@@ -64,6 +69,13 @@ td.r {
 
 
 <script>
+
+
+$(document).ready( function() {
+    $('#directions').hide();
+});
+
+
 $(document).ready( function() {
 
 $( "#from_input" ).autocomplete({
@@ -111,6 +123,15 @@ $( "#to_input" ).autocomplete({
 };
 
 });
+
+/*
+$(document).ready(function() {
+    $('#directions').accordion({
+        collapsible: true,
+        active: true
+    });
+});
+*/
 </script>
 
 
@@ -121,23 +142,25 @@ $( "#to_input" ).autocomplete({
 
 <div id="pane">
     <div id="from" class="loc_entry">
-        <input id="from_input" placeholder="from" value="" onfocus="focusto('from');" onchange="do_get_geocode(this.value);">
+        <input id="from_input" placeholder="from" size="30" value="" onfocus="focusto('from');" onchange="do_get_geocode(this.value);">
         <div id="from_loc_details"></div>
     </div>
 
     <div id="to" class="loc_entry">
-        <input id="to_input" placeholder="to" value="" onfocus="focusto('to');"  onchange="do_get_geocode(this.value);"> <button title="Reverse 'from' and 'to'" onclick="reverse_from_and_to()">&#x21D5;</button>
+        <input id="to_input" placeholder="to" size="26" value="" onfocus="focusto('to');"  onchange="do_get_geocode(this.value);"> <button title="Reverse 'from' and 'to'" onclick="reverse_from_and_to()">&#x21D5;</button>
         <div id="to_loc_details"></div>
     </div>
 
-    <div id="dir_holder">
-        Directions
-        <div>
-            <span id="dir_dist"></span> <span id="dir_dist_unit"></span>
-            <span id="dir_dur"></span> <span id="dir_dur_unit"></span>
+    <div id="directions">
+        <h3>Directions</h3>
+        <div style="margin:0;padding:0">
+            <div>
+                <span id="dir_dist"></span> <span id="dir_dist_unit"></span>
+                <span id="dir_dur"></span> <span id="dir_dur_unit"></span>
+            </div>
+            <div id="steps"></div>
+            <div id="directions_raw"></div>
         </div>
-        <div id="directions"></div>
-        <div id="directions_raw"></div>
     </div>
 </div>
 
@@ -152,10 +175,10 @@ function focusto(f)
 {
     if (f == 'from') {
         FocusFromOrTo = 'from';
-        document.getElementById('from_input').focus();
+        $('#from_input').focus();
     } else if (f == 'to') {
         FocusFromOrTo = 'to';
-        document.getElementById('to_input').focus();
+        $('#to_input').focus();
     } else {
         throw 'unknown focus: ' + f;
     }
@@ -198,7 +221,10 @@ var nyc = [
    -73.99662137031554
 ];
 
-var map = L.map('map'); //.setView(nyc, 16);
+var map = L.map('map', {zoomControl: false});
+L.control.zoom({position: 'bottomright'}).addTo(map);
+L.control.scale().addTo(map);
+map.setZoom(12); // one time
 
 var accessToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
 
@@ -212,9 +238,6 @@ L.tileLayer('https://a.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}{retina}.png?access_t
     accessToken: accessToken,
     retina: navigator.appVersion.match(/iPhone/) ? '' : navigator.appVersion.match(/Mac OS/) ? '@2x' : ''
 }).addTo(map);
-
-L.control.scale().addTo(map);
-map.setZoom(15); // one time
 
 
 var DirectionPolyline = null;
@@ -242,12 +265,12 @@ function do_display_directions()
     if (DirectionPolyline)
         map.removeLayer(DirectionPolyline);
     var latlngs = DirectionsObj.latlngs;
-    DirectionPolyline = L.polyline(latlngs, {color: 'red'}).addTo(map);
+    DirectionPolyline = L.polyline(latlngs, {color: 'red', smoothFactor: 10}).addTo(map);
     console.log('DirectionPolyline', DirectionPolyline);
     console.log('latlngs', latlngs);
     if (latlngs.length != 2 || latlngs[0].toString() != latlngs[1].toString()) { // javascript is an embarassing language
         // don't zoom in to a single point, it's disorienting and pointless
-        map.fitBounds(DirectionPolyline.getBounds());
+        map.fitBounds(DirectionPolyline.getBounds().pad(0.25));
     }
 }
 
@@ -275,15 +298,17 @@ function do_display_direction_steps()
     document.getElementById('directions_raw').innerText = stepsPretty;
 
     // fugly; separate concerns
-    $('#directions').html('');
-    $('#directions').append('<table class=dirs><tr><th><th>dist<th>time');
+    $('#steps').html('');
+    $('#steps').append('<table class=dirs><tr><th><th>dist<th>time');
     steps.forEach(function(st) {
-        $('#directions table').append('<tr>' +
+        $('#steps table').append('<tr>' +
             '<td>' + st.maneuver.instruction +
             '<td class=r>' + meters_to_miles(st.distance).toFixed(1) +
             '<td class=r>' + seconds_format_clock(st.duration)
         );
     });
+    $('#directions').show();
+    $('#directions').accordion({collapsible: true});
 }
 
 function directions_display_totals()
@@ -346,6 +371,7 @@ function mapbox_dirs_to_steps(dirs)
 
 function display_nearby_stations(from, to)
 {
+    do_clear_stations();
     do_display_nearby_stations(from);
     do_display_nearby_stations(to);
 
@@ -357,6 +383,13 @@ function display_nearby_stations(from, to)
         LocTo.nearby_stations = nst2;
     }
     */
+}
+
+function do_clear_stations()
+{
+    shownMarkers.forEach(function(m) {
+        map.removeLayer(m);
+    });
 }
 
 function do_display_nearby_stations(obj)
@@ -452,22 +485,29 @@ function update_from_input()
         var c = L.circle(LocFrom.obj.latlng, radius).addTo(map);
             //.bindPopup("You").openPopup();
         shownCircle.push(c);
+
+        // on first "from", fly to it
+        if (LocTo.obj === null)
+            map.flyTo(LocFrom.obj.latlng);
     }
 
     $('#from_input').val(LocFrom.obj.name || '');
-    $('#from_loc_details').html(
-        (LocFrom.obj.category ? LocFrom.obj.category : '')
-        + (LocFrom.obj.place_name ? '<br>' + LocFrom.obj.place_name : '')
-    );
+    var lines = [
+        (LocFrom.obj.category ? LocFrom.obj.category : null),
+        (LocFrom.obj.place_name ? LocFrom.obj.place_name : null)
+    ].filter((x) => !!x);
+    $('#from_loc_details').html(lines.join('<br>'));
 }
 
 function update_to_input()
 {
     $('#to_input').val(LocTo.obj.name || '');
-    $('#to_loc_details').html(
-        (LocTo.obj.category ? LocTo.obj.category : '')
-        + (LocTo.obj.place_name ? '<br>' + LocTo.obj.place_name : '')
-    );
+
+    var lines = [
+        (LocTo.obj.category ? LocTo.obj.category : null),
+        (LocTo.obj.place_name ? LocTo.obj.place_name : null)
+    ].filter((x) => !!x);
+    $('#to_loc_details').html(lines.join('<br>'));
 }
 
 function maybe_look_up_directions()
@@ -1444,6 +1484,9 @@ map.on('locationerror', function(ev) {
     console.log(ev.type);
 });
 
+// XXX: TODO: use map.locate (ref: https://leafletjs.com/reference-1.3.4.html#map-methods-for-modifying-map-state)
+
+$(document).ready(function() {
 // real shit
 if (navigator.geolocation) {
     var opts = {
@@ -1462,7 +1505,6 @@ if (navigator.geolocation) {
     function(err) {
         console.log('getCurrentPosition error', err);
         alert("geolocation failed: " + JSON.stringify(err));
-
         // set map to manhattan, but don't count it as "from"...
         var latlng = [40.761873, -73.987706];
         //station_clicked_push({type: 'getCurrentPosition', fake: true, latlng: latlng})
@@ -1470,7 +1512,7 @@ if (navigator.geolocation) {
     },
     opts);
 }
-
+});
 </script>
 </body>
 </html>
