@@ -32,11 +32,15 @@ html, body, #map {
     z-index: 2;
     background-color: #fff;
     font-size: 6pt;
-    font-family: verdana, sans-serif;
-    white-space: pre;
+    font-family: sans-serif;
 }
 pane div {
-    border: 1px;
+    white-space: pre;
+}
+.loc_entry {
+    margin-top: 0;
+    margin-bottom: 1px;
+    margin-right: 0;
 }
 </style>
 <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
@@ -97,30 +101,30 @@ $( "#to_input" ).autocomplete({
 
 </head>
 <body>
+
 <div id="map"></div>
 
 <div id="pane">
-pane
-    <div id="fromto"></div>
-
-    <div id="from">
+    <div id="from" class="loc_entry">
         from:
         <input id="from_input" value="" onfocus="focusto('from');" onchange="do_get_geocode(this.value);">
-        <div id="from_geocode_results"/>
+        <div id="from_geocode_results"></div>
     </div>
 
-    <div id="geocode">
+    <div id="to" class="loc_entry">
         to:
         <input id="to_input" value="" onfocus="focusto('to');"  onchange="do_get_geocode(this.value);"> <button title="Reverse 'from' and 'to'" onclick="reverse_from_and_to()">&#x21D5;</button>
-        <div id="to_geocode_results"/>
+        <div id="to_geocode_results"></div>
     </div>
 
-    Directions
-    <div>
-        <span id="directions_distance"></span> <span>meters</span>
+    <div id="dir_holder">
+        Directions
+        <div>
+            <span id="directions_distance"></span> <span>meters</span>
+        </div>
+        <label for="directions">Steps</label>
+        <div id="directions"></div>
     </div>
-    <label for="directions">Steps</label>
-    <div id="directions"></div>
 </div>
 
 
@@ -200,35 +204,30 @@ map.setZoom(15); // one time
 
 
 var DirectionPolyline = null;
+var DirectionsObj = {
+    raw_dirs: null,
+    steps: null,
+    latlngs: null,
+    total_distance: null
+};
 function display_directions(from, to, dirs)
 {
-    var pretty = JSON.stringify(dirs, null, 2);
-    var steps = [];
-    var latlngs = [];
+    process_directions(dirs);
+    do_display_directions();
+    display_nearby_stations(from, to);
+}
+
+function do_display_directions()
+{
+    var stepsPretty = JSON.stringify(DirectionsObj.steps, null, 2);
+    document.getElementById('directions').innerText = stepsPretty;
+    document.getElementById('directions_distance').innerText = DirectionsObj.total_distance.toFixed(0);
+
+    // show directions polyline
     // clean up
     if (DirectionPolyline)
         map.removeLayer(DirectionPolyline);
-    // draw new route...
-    dirs.routes.forEach(function(rt) {
-        rt.legs.forEach(function(leg) {
-            leg.steps.forEach(function(step, i) {
-                var loc = step.maneuver.location;
-                var latlng = [loc[1], loc[0]];
-                latlngs.push(latlng);
-                steps.push(
-                    {
-                        maneuver: step.maneuver,
-                        name: step.name,
-                        distance: step.distance,
-                        duration: step.duration
-                    }
-                );
-            });
-        });
-    });
-    var stepsPretty = JSON.stringify(steps, null, 2);
-    document.getElementById('directions').innerText = stepsPretty;
-    document.getElementById('directions_distance').innerText = steps.reduce((acc, item) => acc + item.distance, 0).toFixed(0);
+    var latlngs = DirectionsObj.latlngs;
     DirectionPolyline = L.polyline(latlngs, {color: 'red'}).addTo(map);
     console.log('DirectionPolyline', DirectionPolyline);
     console.log('latlngs', latlngs);
@@ -236,9 +235,42 @@ function display_directions(from, to, dirs)
         // don't zoom in to a single point, it's disorienting and pointless
         map.fitBounds(DirectionPolyline.getBounds());
     }
+}
 
-    display_nearby_stations(from, to);
+function process_directions(dirs)
+{
+    var steps = mapbox_dirs_to_steps(dirs);
+    var latlngs = steps.map((s) => s.latlng);
+    var total_distance = steps.reduce((acc, item) => acc + item.distance, 0);
 
+    DirectionsObj.raw_dirs = dirs;
+    DirectionsObj.steps = steps;
+    DirectionsObj.latlngs = latlngs;
+    DirectionsObj.total_distance = total_distance;
+}
+
+function mapbox_dirs_to_steps(dirs)
+{
+    var steps = [];
+    // draw new route...
+    dirs.routes.forEach(function(rt) {
+        rt.legs.forEach(function(leg) {
+            leg.steps.forEach(function(step, i) {
+                var loc = step.maneuver.location;
+                var latlng = [loc[1], loc[0]];
+                steps.push(
+                    {
+                        maneuver: step.maneuver,
+                        name: step.name,
+                        latlng: latlng,
+                        distance: step.distance,
+                        duration: step.duration
+                    }
+                );
+            });
+        });
+    });
+    return steps;
 }
 
 
@@ -264,14 +296,15 @@ function do_display_nearby_stations(obj)
     var stations = nst.map((x) => x[1]);
     stations.forEach(function(st) {
         var m = L.marker(st.latlng).addTo(map).bindPopup(st.name);
+        m.on('click', function(ev) {
+            station_clicked_push(st);
+        });
         shownMarkers.push(m);
     });
 }
 
 function get_directions(from, to)
 {
-    document.getElementById('fromto').innerText = '' + from + ', ' + to;
-
     var fromlatlng = rev(from.latlng);
     var tolatlng = rev(to.latlng);
 
@@ -330,16 +363,32 @@ function station_clicked_push(obj)
     maybe_look_up_directions();
 }
 
+function update_view()
+{
+}
 
+var shownCircle = [];
 function update_from_input()
 {
     // update from_input
+
+    if (LocFrom.obj !== null) {
+        shownCircle.forEach(function(c) {
+            map.removeLayer(c);
+        });
+        shownCircle = [];
+        var radius = 25;
+        var c = L.circle(LocFrom.obj.latlng, radius).addTo(map);
+            //.bindPopup("You").openPopup();
+        shownCircle.push(c);
+    }
+
     if (LocFrom.obj.name) {
         document.getElementById('from_input').value = LocFrom.obj.name;
     } else {
         document.getElementById('from_input').value = '';
     }
-    document.getElementById('from_geocode_results').innerHTML = JSON.stringify(LocFrom.obj);
+    document.getElementById('from_geocode_results').innerHTML = LocFrom.obj.name + ', ' + LocFrom.obj.place_name;
 }
 
 function update_to_input()
@@ -349,7 +398,7 @@ function update_to_input()
     } else {
         document.getElementById('to_input').value = '';
     }
-    document.getElementById('to_geocode_results').innerHTML = JSON.stringify(LocTo.obj);
+    document.getElementById('to_geocode_results').innerHTML = LocTo.obj.name + ', ' + LocTo.obj.place_name;
 }
 
 function maybe_look_up_directions()
@@ -503,8 +552,8 @@ function nearest_stations(from)
     var mindist = Math.max(ds[0][0], 0.001);
     console.log('mindist', mindist);
     var i = 3;
-    // return between 3 and 7 stations, as long as they're "close enough"
-    while (i < ds.length && i < 7 && ds[i][0] <= mindist * 3)
+    // return multiple "close enough" stations
+    while (i < ds.length && i < 5 && ds[i][0] <= mindist * 2)
         i++;
     return ds.slice(0, i);
 }
@@ -1335,50 +1384,6 @@ var Stations = [
 
 var timerShowAll = null;
 var shownMarkers = [];
-function show_nearest_stations(latlng)
-{
-
-    console.log('show_nearest_stations', latlng);
-
-    shownMarkers.forEach(function(m) {
-        map.removeLayer(m);
-    });
-
-    // you are here
-    var radius = 25;
-    var c = L.circle(latlng, radius).addTo(map);
-        //.bindPopup("You").openPopup();
-    shownMarkers.push(c);
-
-    // find stations...
-    var nearest = nearest_stations(latlng);
-    console.log('nearest', nearest);
-    nearest.reverse(); // popup for closest station last so it sticks
-    nearest.forEach(function(x) {
-        var m = L.marker(x[1].latlng).addTo(map).bindPopup(x[1].name); //.openPopup();
-        shownMarkers.push(m);
-    });
-
-    // debounce... :-/
-    setTimeout(function() { 
-        timerShowNearest = null;
-    }, 500);
-}
-
-function show_all_stations(latlng)
-{
-    shownMarkers.forEach(function(m) {
-        map.removeLayer(m);
-    });
-    Stations.forEach(function(st) {
-        var m = L.marker(st.latlng).addTo(map).bindPopup(st.name); //.openPopup();
-        m.on('click', function(ev) {
-            //alert("click");
-            station_clicked_push(st);
-        });
-        shownMarkers.push(m);
-    });
-}
 
 function rev(ll)
 {
@@ -1390,18 +1395,10 @@ function look_up_directions(from, to)
     get_directions(from, to);
 }
 
-function do_show_all_stations(latlng)
-{
-    if (timerShowAll)
-        return;
-    timerShowNearest = setTimeout(show_all_stations, 0, latlng);
-}
-
 map.on('moveend', function(ev) {
     console.log(ev.type, ev);
     var c = map.getCenter();
     console.log('c', c);
-    //do_show_all_stations([c.lat, c.lng]);
 });
 
 map.on('click', function(ev) {
