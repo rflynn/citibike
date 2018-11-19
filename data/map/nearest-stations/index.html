@@ -8,17 +8,17 @@
 <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 <style>
 html, body, #map {
-    width: 100%;
-    height: 100%;
     margin: 0;
     padding: 0;
 }
 #map {
-    width: 80%;
+    width: 80vw;
+    height: 100vh;
     position: absolute;
     top: 0;
     left: 20%;
     bottom: 0;
+    z-index: 1;
 }
 .leaflet-control-attribution {
     font-size: 6pt !important;
@@ -29,7 +29,7 @@ html, body, #map {
     top: 0;
     bottom: 0;
     position: absolute;
-    z-index: 999;
+    z-index: 2;
     background-color: #fff;
     font-size: 6pt;
     font-family: verdana, sans-serif;
@@ -41,6 +41,44 @@ pane div {
 </style>
 <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
+
+
+<script>
+/*
+$(document).ready( function() {
+$( "#to_input" ).autocomplete({
+    minLength: 1,
+    source: projects,
+    source: function( request, response ) {
+        do_get_geocode(request.term);
+        // XXX: FIXME: TODO: need to wire up response(...), and in order to do that, need to refactor show_geocode...
+    },
+    focus: function( event, ui ) {
+        $( "#to_input" ).val( ui.item.label );
+        return false;
+    },
+    select: function( event, ui ) {
+        $( "#to_input" ).val( ui.item.label );
+        //$( "#project-id" ).val( ui.item.value );
+        //$( "#project-description" ).html( ui.item.desc );
+        //$( "#project-icon" ).attr( "src", "images/" + ui.item.icon );
+        return false;
+    }
+})
+.autocomplete( "instance" )._renderItem = function( ul, item ) {
+  return $( "<li>" )
+    .append( "<div>" + item.label + "<br>" + item.desc + "</div>" )
+    .appendTo( ul );
+};
+});
+*/
+</script>
+
+
+
+
+
 </head>
 <body>
 <div id="map"></div>
@@ -57,68 +95,20 @@ pane
 
     <div id="geocode">
         to:
-        <input id="to_input" value="" onfocus="focusto('to');"  onchange="do_get_geocode(this.value, 'to');">
+        <input id="to_input" value="" onfocus="focusto('to');"  onchange="do_get_geocode(this.value, 'to');"> <button title="Reverse 'from' and 'to'" onclick="reverse_from_and_to()">&#x21D5;</button>
         <div id="to_geocode_results"/>
     </div>
 
     Directions
-    <label for="directions_distance">distance (m)</label>
-        <div id="directions_distance"></div>
+    <div>
+        <span id="directions_distance"></span> <span>meters</span>
+    </div>
     <label for="directions">Steps</label>
     <div id="directions"></div>
 </div>
 
 
 
-
-<script>
-
-    var projects = [
-      {
-        value: "jquery",
-        label: "jQuery",
-        desc: "the write less, do more, JavaScript library",
-        icon: "jquery_32x32.png"
-      },
-      {
-        value: "jquery-ui",
-        label: "jQuery UI",
-        desc: "the official user interface library for jQuery",
-        icon: "jqueryui_32x32.png"
-      },
-      {
-        value: "sizzlejs",
-        label: "Sizzle JS",
-        desc: "a pure-JavaScript CSS selector engine",
-        icon: "sizzlejs_32x32.png"
-      }
-    ];
-
-  $( function() {
-
-    $( "#to_input" ).autocomplete({
-      minLength: 1,
-      source: projects,
-      focus: function( event, ui ) {
-        $( "#to_input" ).val( ui.item.label );
-        return false;
-      },
-      select: function( event, ui ) {
-        $( "#to_input" ).val( ui.item.label );
-        //$( "#project-id" ).val( ui.item.value );
-        //$( "#project-description" ).html( ui.item.desc );
-        //$( "#project-icon" ).attr( "src", "images/" + ui.item.icon );
- 
-        return false;
-      }
-    })
-    .autocomplete( "instance" )._renderItem = function( ul, item ) {
-      return $( "<li>" )
-        .append( "<div>" + item.label + "<br>" + item.desc + "</div>" )
-        .appendTo( ul );
-    };
-  } );
-</script>
 
 
 <script>
@@ -222,7 +212,7 @@ function show_directions(from, to, dirs)
     });
     var stepsPretty = JSON.stringify(steps, null, 2);
     document.getElementById('directions').innerText = stepsPretty;
-    document.getElementById('directions_distance').innerText = steps.reduce((acc, item) => acc + item.distance, 0);
+    document.getElementById('directions_distance').innerText = steps.reduce((acc, item) => acc + item.distance, 0).toFixed(0);
     DirectionPolyline = L.polyline(latlngs, {color: 'red'}).addTo(map);
     console.log('DirectionPolyline', DirectionPolyline);
     console.log('latlngs', latlngs);
@@ -281,27 +271,42 @@ function station_clicked_push(obj)
 
     if (FocusFromOrTo == 'from') {
         LocFrom.obj = obj;
-        // update from_input
-        if (LocFrom.obj.name) {
-            document.getElementById('from_input').value = LocFrom.obj.name;
-        } else {
-            document.getElementById('from_input').value = '';
-        }
-        document.getElementById('from_geocode_results').innerHTML = JSON.stringify(LocFrom.obj);
+        update_from_input();
         focusto('to');
     } else if (FocusFromOrTo == 'to') {
         LocTo.obj = obj;
-        if (LocTo.obj.name) {
-            document.getElementById('to_input').value = LocTo.obj.name;
-        } else {
-            document.getElementById('to_input').value = '';
-        }
-        document.getElementById('to_geocode_results').innerHTML = JSON.stringify(LocTo.obj);
+        update_to_input();
     }
+    maybe_look_up_directions();
+}
 
-	if (LocFrom.obj !== null && LocTo.obj !== null) {
+
+function update_from_input()
+{
+    // update from_input
+    if (LocFrom.obj.name) {
+        document.getElementById('from_input').value = LocFrom.obj.name;
+    } else {
+        document.getElementById('from_input').value = '';
+    }
+    document.getElementById('from_geocode_results').innerHTML = JSON.stringify(LocFrom.obj);
+}
+
+function update_to_input()
+{
+    if (LocTo.obj.name) {
+        document.getElementById('to_input').value = LocTo.obj.name;
+    } else {
+        document.getElementById('to_input').value = '';
+    }
+    document.getElementById('to_geocode_results').innerHTML = JSON.stringify(LocTo.obj);
+}
+
+function maybe_look_up_directions()
+{
+    if (LocFrom.obj !== null && LocTo.obj !== null) {
         station_directions(LocFrom.obj, LocTo.obj);
-	}
+    }
 }
 
 function show_geocode(geoResults)
@@ -382,6 +387,19 @@ function tableCreate()
 }
 
 
+function reverse_from_and_to()
+{
+    var LocTmp = LocFrom;
+    LocFrom = LocTo;
+    LocTo = LocTmp;
+
+    update_from_input();
+    update_to_input();
+    maybe_look_up_directions();
+}
+
+
+
 var GeoCodeTimer = null;
 function do_get_geocode(searchstr)
 {
@@ -390,8 +408,9 @@ function do_get_geocode(searchstr)
     GeoCodeTimer = setTimeout(get_geocode, 500, searchstr);
 }
 
-function get_geocode(searchstr)
+function get_geocode(searchstr, callback)
 {
+    callback = callback || show_geocode;
     var gct='-73.977718,40.751956'
     // hardcoded for ~5 borough-ish + a little but of NJ
     var bbox='-74.076861,40.587005,-73.733688,40.858649'
@@ -411,7 +430,7 @@ function get_geocode(searchstr)
             switch (req.status) {
             case 200:
                 console.log('done', req);
-                show_geocode(JSON.parse(req.responseText));
+                callback(JSON.parse(req.responseText));
                 break;
             default:
                 console.log('error', req);
@@ -424,7 +443,6 @@ function get_geocode(searchstr)
         }
     }
     req.send();
-
 }
 
 
