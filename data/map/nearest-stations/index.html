@@ -550,8 +550,19 @@ function update_from_input()
     $('#from_loc_details').html(lines.join('<br>'));
 }
 
+var shownToCircle = [];
 function update_to_input()
 {
+    if (LocTo.obj !== null) {
+        shownToCircle = [];
+        shownToCircle.forEach(function(c) {
+            map.removeLayer(c);
+        });
+        var radius = 25;
+        var c = L.circle(LocTo.obj.latlng, radius).addTo(map);
+        shownToCircle.push(c);
+    }
+
     $('#to_input').val(LocTo.obj.name || '');
 
     var lines = [
