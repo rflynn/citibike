@@ -87,6 +87,7 @@ var LocCacheCnt = window.localStorage ? JSON.parse(window.localStorage.getItem('
 var LocCache = window.localStorage ? JSON.parse(window.localStorage.getItem('LocCache') || '{}') : {};
 
 $(document).ready( function() {
+    stations_init();
     loc_cache_render();
     //$('#directions').hide();
     $('#directions').accordion({
@@ -202,33 +203,6 @@ function focusto(f)
 
 console.log('script running...');
 
-var greenIcon = new L.Icon({
-  iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-  iconSize: [16, 28],
-  iconAnchor: [8, 28],
-  popupAnchor: [1, -22],
-  shadowSize: [28, 28]
-});
-
-var yellowIcon = new L.Icon({
-  iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-yellow.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-  iconSize: [16, 28],
-  iconAnchor: [8, 28],
-  popupAnchor: [1, -22],
-  shadowSize: [28, 28]
-});
-
-var redIcon = new L.Icon({
-  iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-  iconSize: [16, 28],
-  iconAnchor: [8, 28],
-  popupAnchor: [1, -22],
-  shadowSize: [28, 28]
-});
-
 var stationIcon = new L.Icon({
   iconUrl: 'img/bike-blue.png',
   shadowUrl: 'img/marker-shadow.png',
@@ -236,6 +210,70 @@ var stationIcon = new L.Icon({
   iconAnchor: [8, 28],
   popupAnchor: [1, -32],
   shadowSize: [48, 32]
+});
+
+
+var iconStationInactive = new L.Icon({
+  iconUrl: 'img/citibike-station-ref/inactive.png',
+  iconSize: [26, 32],
+  iconAnchor: [13, 32],
+  popupAnchor: [1, -32],
+  shadowUrl: 'img/citibike-station-ref/shadow.png',
+  shadowSize: [28, 34]
+});
+
+var iconStationActive04 = new L.Icon({
+  iconUrl: 'img/citibike-station-ref/active-available-0-4.png',
+  iconSize: [26, 32],
+  iconAnchor: [13, 32],
+  popupAnchor: [1, -32],
+  shadowUrl: 'img/citibike-station-ref/shadow.png',
+  shadowSize: [28, 34]
+});
+
+var iconStationActive14 = new L.Icon({
+  iconUrl: 'img/citibike-station-ref/active-available-1-4.png',
+  iconSize: [26, 32],
+  iconAnchor: [13, 32],
+  popupAnchor: [1, -32],
+  shadowUrl: 'img/citibike-station-ref/shadow.png',
+  shadowSize: [28, 34]
+});
+
+var iconStationActive24 = new L.Icon({
+  iconUrl: 'img/citibike-station-ref/active-available-2-4.png',
+  iconSize: [26, 32],
+  iconAnchor: [13, 32],
+  popupAnchor: [1, -32],
+  shadowUrl: 'img/citibike-station-ref/shadow.png',
+  shadowSize: [28, 34]
+});
+
+var iconStationActive34 = new L.Icon({
+  iconUrl: 'img/citibike-station-ref/active-available-3-4.png',
+  iconSize: [26, 32],
+  iconAnchor: [13, 32],
+  popupAnchor: [1, -32],
+  shadowUrl: 'img/citibike-station-ref/shadow.png',
+  shadowSize: [28, 34]
+});
+
+var iconStationActive44 = new L.Icon({
+  iconUrl: 'img/citibike-station-ref/active-available-4-4.png',
+  iconSize: [26, 32],
+  iconAnchor: [13, 32],
+  popupAnchor: [1, -32],
+  shadowUrl: 'img/citibike-station-ref/shadow.png',
+  shadowSize: [28, 34]
+});
+
+var iconStationActiveEmpty = new L.Icon({
+  iconUrl: 'img/citibike-station-ref/active-available-empty.png',
+  iconSize: [26, 32],
+  iconAnchor: [13, 32],
+  popupAnchor: [1, -32],
+  shadowUrl: 'img/citibike-station-ref/shadow.png',
+  shadowSize: [28, 34]
 });
 
 
@@ -263,6 +301,9 @@ L.control.scale().addTo(map);
 var latlng = [40.761873, -73.987706];
 L.marker(latlng, {icon: stationIcon}).addTo(map);
 */
+//L.marker(GCT, {icon: iconStationActive44}).addTo(map);
+
+
 
 var accessToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
 
@@ -462,8 +503,8 @@ function do_display_nearby_stations(obj)
     console.log('nst', nst);
     var stations = nst.map((x) => x[1]);
     stations.forEach(function(st) {
-        var m = L.marker(st.latlng, {icon: stationIcon}).addTo(map);
-        m.bindTooltip(st.name);
+        var m = L.marker(st.latlng, {icon: station2icon(st.name)}).addTo(map);
+        m.bindTooltip(station_tooltip(st.name));
         m.on('click', function(ev) {
             station_clicked_push(st);
         });
@@ -574,8 +615,8 @@ var _MakiIcon = {
     'ice-cream': '🍨',
     'rail': '🚆',
     'bike': '🚆',
-    'college': '🎓'
-    // XXX: unfortunately 'coffee' icon screws up rendering...
+    'college': '🎓',
+    'cafe': '\u2615'
 }
 function get_icon(obj)
 {
@@ -1599,11 +1640,99 @@ var Stations = [
 
 ];
 
-for (var i = 0; i < Stations.length; i++)
+
+var Stations2Raw = {};
+var Stations2 = {};
+function stations_init()
 {
-    Stations[i].category = 'citibike station';
-    Stations[i].maki = 'citibike-station';
-    Stations[i].place_name = Stations[i].name;  // ensure it's used in the cache
+    stations_fetch();
+
+    // XXX: TODO: nuke this crap
+    for (var i = 0; i < Stations.length; i++)
+    {
+        Stations[i].category = 'citibike station';
+        Stations[i].maki = 'citibike-station';
+        Stations[i].place_name = Stations[i].name;  // ensure it's used in the cache
+    }
+}
+function stations_fetch()
+{
+    var url = 'https://layer.bicyclesharing.net/map/v1/nyc/map-inventory';
+    $.ajax(url, {
+        dataType: 'json',
+        timeout: 10000,
+        success: function(data, status, xhr) {
+            Stations2Raw = data;
+            var fstations = Stations2Raw.features.filter((f) => !!(f.properties && f.properties.station));
+            Stations2 = {};
+            fstations.forEach(function (fst) {
+                Stations2[fst.properties.station.name] = fst;
+            });
+            console.log('Stations2', Stations2);
+        }
+    })
+}
+
+var IconsStations = {
+    empty:      iconStationActiveEmpty,
+    active04:   iconStationActive04,
+    active14:   iconStationActive14,
+    active24:   iconStationActive24,
+    active34:   iconStationActive34,
+    active44:   iconStationActive44,
+    comingsoon: iconStationInactive,
+    inactive:   iconStationInactive,
+    valet:      iconStationActive44
+};
+
+function station2status(name)
+{
+    var st = Stations2[name];
+    var propst = st.properties.station;
+    var icontype = null;
+    if (propst.installed === false) {
+        icontype = 'comingsoon';
+    } else if (propst.renting === false) {
+        icontype = 'inactive';
+    } else if (propst.valet_status === 'available') {
+        icontype = 'valet';
+    } else {
+        var capacity = propst.capacity;
+        var ba = propst.bikes_available;
+        var ba_pct = (ba.toFixed(6) / capacity).toFixed(4);
+             if (ba == 0)        icon_type = 'empty';
+        else if (ba_pct >= 0.80) icon_type = 'active44';
+        else if (ba_pct >= 0.60) icon_type = 'active34';
+        else if (ba_pct >= 0.40) icon_type = 'active24';
+        else if (ba_pct >= 0.20) icon_type = 'active14';
+        else if (ba_pct <  0.20) icon_type = 'active04';
+    }
+    return icon_type;
+}
+
+function station2icon(name)
+{
+    var status = station2status(name);
+    var icon = IconsStations[status];
+    return icon;
+}
+
+function station_tooltip(name)
+{
+    var st = Stations2[name];
+    var propst = st.properties.station;
+    var status = null;
+    if (propst.installed === false) {
+        status = 'comingsoon';
+    } else if (propst.renting === false) {
+        status = 'inactive';
+    } else {
+        var capacity = propst.capacity;
+        var ba = propst.bikes_available;
+        var da = propst.docks_available;
+        status = ba + ' bikes, ' + da + ' docks<br>\n' + capacity + ' capacity';
+    }
+    return name + '<br>\n' + status;
 }
 
 
