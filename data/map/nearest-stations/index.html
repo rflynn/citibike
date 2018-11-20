@@ -651,13 +651,7 @@ function update_from_input()
         }
     }
 
-    $('#from_input').val(LocFrom.obj.name || '');
-    var lines = [
-        get_icon(LocFrom.obj),
-        LocFrom.obj.category,
-        LocFrom.obj.address
-    ].filter((x) => !!x);
-    $('#from_loc_details').html(lines.join('<br>'));
+    $('#from_input').val(LocFrom.obj.place_name || LocFrom.obj.name || '');
 }
 
 var shownToCircle = [];
@@ -678,14 +672,7 @@ function update_to_input()
         setTimeout(() => map.removeLayer(c._popup), 2000);
     }
 
-    $('#to_input').val(LocTo.obj.name || '');
-
-    var lines = [
-        get_icon(LocTo.obj),
-        LocTo.obj.category,
-        LocTo.obj.address
-    ].filter((x) => !!x);
-    $('#to_loc_details').html(lines.join('<br>'));
+    $('#to_input').val(LocTo.obj.place_name || LocTo.obj.name || '');
 }
 
 function maybe_look_up_directions()
