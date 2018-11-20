@@ -519,12 +519,12 @@ function update_view()
 var shownCircle = [];
 function update_from_input()
 {
-    // update from_input
-
-    if (LocFrom.obj !== null) {
+    if (shownCircle.length) {
         shownCircle.forEach(function(c) {
             map.removeLayer(c);
         });
+    }
+    if (LocFrom.obj !== null) {
         shownCircle = [];
         var radius = 25;
         var c = L.circle(LocFrom.obj.latlng, radius).addTo(map);
@@ -553,11 +553,13 @@ function update_from_input()
 var shownToCircle = [];
 function update_to_input()
 {
-    if (LocTo.obj !== null) {
-        shownToCircle = [];
+    if (shownToCircle.length) {
         shownToCircle.forEach(function(c) {
             map.removeLayer(c);
         });
+    }
+    if (LocTo.obj !== null) {
+        shownToCircle = [];
         var radius = 25;
         var c = L.circle(LocTo.obj.latlng, radius).addTo(map);
         shownToCircle.push(c);
