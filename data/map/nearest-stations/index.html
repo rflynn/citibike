@@ -145,12 +145,12 @@ $(document).ready(function() {
 
 <div id="pane">
     <div id="from" class="loc_entry">
-        <input id="from_input" placeholder="from" size="30" value="" onfocus="focusto('from');" onchange="do_get_geocode(this.value);">
+        <input id="from_input" type="search" placeholder="from" size="30" value="" onfocus="focusto('from');" onchange="do_get_geocode(this.value);">
         <div id="from_loc_details"></div>
     </div>
 
     <div id="to" class="loc_entry">
-        <input id="to_input" placeholder="to" size="26" value="" onfocus="focusto('to');"  onchange="do_get_geocode(this.value);"> <button title="Reverse 'from' and 'to'" onclick="reverse_from_and_to()">&#x21D5;</button>
+        <input id="to_input" type="search" placeholder="to" size="26" value="" onfocus="focusto('to');"  onchange="do_get_geocode(this.value);"> <button title="Reverse 'from' and 'to'" onclick="reverse_from_and_to()">&#x21D5;</button>
         <div id="to_loc_details"></div>
     </div>
 
