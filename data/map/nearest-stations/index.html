@@ -26,7 +26,7 @@ html, body, #map {
 #pane {
     margin: 5px;
     /*height: 100vh;*/
-    max-width: 25vw;
+    max-width: 25em;
     top: 0;
     /*bottom: 0;*/
     position: absolute;
@@ -157,10 +157,6 @@ $(document).ready(function() {
     <div id="directions">
         <h3>Directions</h3>
         <div style="margin:0;padding:0">
-            <div>
-                <span id="dir_dist"></span> <span id="dir_dist_unit"></span>
-                <span id="dir_dur"></span> <span id="dir_dur_unit"></span>
-            </div>
             <div id="steps"></div>
             <div id="directions_raw"></div>
         </div>
@@ -311,24 +307,47 @@ function seconds_format_clock(seconds)
     return mins.toString() + ':' + secStr;
 }
 
+function simplify_instruction(ins)
+{
+    //ins = ins.replace(/^Head /g, '');
+    ins = ins.replace(/^Continue straight /g, 'Straight ');
+    ins = ins.replace(/^Turn left onto /g, 'Left on ');
+    ins = ins.replace(/^Turn right onto /g, 'Right on ');
+    ins = ins.replace(/northeast/g, 'NE');
+    ins = ins.replace(/northwest/g, 'NW');
+    ins = ins.replace(/southeast/g, 'SE');
+    ins = ins.replace(/southwest/g, 'SW');
+    ins = ins.replace(/Avenue/g, 'Ave');
+    ins = ins.replace(/Street/g, 'St');
+    ins = ins.replace(/Boulevard/g, 'Blvd');
+    ins = ins.replace(/^You have arrived at your destination/g, 'You have arrived');
+    return ins;
+}
+
 function do_display_direction_steps()
 {
-    directions_display_totals();
-
     var steps = DirectionsObj.steps;
     var stepsPretty = JSON.stringify(steps, null, 2);
     document.getElementById('directions_raw').innerText = stepsPretty;
 
     // fugly; separate concerns
     $('#steps').html('');
-    $('#steps').append('<table class=dirs><tr><th><th>dist<th>time');
+    $('#steps').append('<table class=dirs><tr><th>' +
+        '<div>' +
+        '    <span id="dir_dist"></span> <span id="dir_dist_unit"></span>' +
+        '    <span id="dir_dur"></span> <span id="dir_dur_unit"></span>' +
+        '</div>' +
+    '<th>dist<th>time');
     steps.forEach(function(st) {
         $('#steps table').append('<tr>' +
-            '<td>' + st.maneuver.instruction +
+            '<td>' + simplify_instruction(st.maneuver.instruction) +
             '<td class=r>' + meters_to_miles(st.distance).toFixed(1) +
             '<td class=r>' + seconds_format_clock(st.duration)
         );
     });
+
+    directions_display_totals();
+
     $('#directions').show();
     $('#directions').accordion({collapsible: true});
 }
@@ -516,7 +535,7 @@ function update_from_input()
     $('#from_input').val(LocFrom.obj.name || '');
     var lines = [
         (LocFrom.obj.category ? LocFrom.obj.category : null),
-        (LocFrom.obj.place_name ? LocFrom.obj.place_name : null)
+        (LocFrom.obj.address ? LocFrom.obj.address : null)
     ].filter((x) => !!x);
     $('#from_loc_details').html(lines.join('<br>'));
 }
@@ -527,7 +546,7 @@ function update_to_input()
 
     var lines = [
         (LocTo.obj.category ? LocTo.obj.category : null),
-        (LocTo.obj.place_name ? LocTo.obj.place_name : null)
+        (LocTo.obj.address ? LocTo.obj.address : null)
     ].filter((x) => !!x);
     $('#to_loc_details').html(lines.join('<br>'));
 }
