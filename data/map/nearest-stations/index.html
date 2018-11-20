@@ -231,10 +231,13 @@ var nyc = [
    -73.99662137031554
 ];
 
-var map = L.map('map', {zoomControl: false});
+var map = L.map('map', {
+                        center: nyc,
+                        zoom: 12,
+                        zoomControl: false
+                       });
 L.control.zoom({position: 'bottomright'}).addTo(map);
 L.control.scale().addTo(map);
-map.setZoom(12); // one time
 
 /*
 // test icon
@@ -529,8 +532,14 @@ function update_from_input()
         shownCircle.push(c);
 
         // on first "from", fly to it
-        if (LocTo.obj === null)
-            map.flyTo(LocFrom.obj.latlng);
+        if (LocTo.obj === null) {
+            try {
+                // on iPhone get: "Error: Set map center and zoom first."
+                map.flyTo(LocFrom.obj.latlng);
+            } catch (err) {
+                console.log('err', err);
+            }
+        }
     }
 
     $('#from_input').val(LocFrom.obj.name || '');
