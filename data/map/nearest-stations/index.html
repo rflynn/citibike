@@ -158,7 +158,7 @@ $(document).ready(function() {
         <h3>Directions</h3>
         <div style="margin:0;padding:0">
             <div id="steps"></div>
-            <div id="directions_raw"></div>
+            <!--div id="directions_raw"></div-->
         </div>
     </div>
 </div>
@@ -224,8 +224,6 @@ var stationIcon = new L.Icon({
   popupAnchor: [1, -32],
   shadowSize: [48, 32]
 });
-
-//L.marker([51.5, -0.09], {icon: greenIcon}).addTo(map);
 
 
 var nyc = [
@@ -313,6 +311,8 @@ function simplify_instruction(ins)
     ins = ins.replace(/^Continue straight /g, 'Straight ');
     ins = ins.replace(/^Turn left onto /g, 'Left on ');
     ins = ins.replace(/^Turn right onto /g, 'Right on ');
+    ins = ins.replace(/^Turn left /g, 'Left ');
+    ins = ins.replace(/^Turn right /g, 'Right ');
     ins = ins.replace(/northeast/g, 'NE');
     ins = ins.replace(/northwest/g, 'NW');
     ins = ins.replace(/southeast/g, 'SE');
@@ -328,7 +328,8 @@ function do_display_direction_steps()
 {
     var steps = DirectionsObj.steps;
     var stepsPretty = JSON.stringify(steps, null, 2);
-    document.getElementById('directions_raw').innerText = stepsPretty;
+    //document.getElementById('directions_raw').innerText = stepsPretty;
+    console.log('steps', steps);
 
     // fugly; separate concerns
     $('#steps').html('');
@@ -1527,6 +1528,12 @@ map.on('locationerror', function(ev) {
 
 // XXX: TODO: use map.locate (ref: https://leafletjs.com/reference-1.3.4.html#map-methods-for-modifying-map-state)
 
+function do_geolocated(latlng)
+{
+    station_clicked_push({name: 'current location', latlng: latlng, address: '', place_name: '', type: 'getCurrentPosition'})
+    map.setView(latlng);
+}
+
 $(document).ready(function() {
 // real shit
 if (navigator.geolocation) {
@@ -1540,8 +1547,7 @@ if (navigator.geolocation) {
         var lat = pos.coords.latitude;
         var lng = pos.coords.longitude;
         var latlng = [lat, lng];
-        station_clicked_push({name: 'current location', place_name: '', latlng: latlng, type: 'getCurrentPosition'})
-        map.setView(latlng);
+        do_geolocated(latlng);
     },
     function(err) {
         console.log('getCurrentPosition error', err);
