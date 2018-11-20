@@ -62,6 +62,9 @@ td.r {
     padding-left: 0;
     padding-right: 0;
 }
+th {
+    font-size: x-small;
+}
 </style>
 <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
@@ -174,11 +177,15 @@ focusto('from');
 function focusto(f)
 {
     if (f == 'from') {
-        FocusFromOrTo = 'from';
-        $('#from_input').focus();
+        if (FocusFromOrTo !== 'from') {
+            FocusFromOrTo = 'from';
+            $('#from_input').focus();
+        }
     } else if (f == 'to') {
-        FocusFromOrTo = 'to';
-        $('#to_input').focus();
+        if (FocusFromOrTo !== 'to') {
+            FocusFromOrTo = 'to';
+            $('#to_input').focus();
+        }
     } else {
         throw 'unknown focus: ' + f;
     }
@@ -213,6 +220,15 @@ var redIcon = new L.Icon({
   shadowSize: [28, 28]
 });
 
+var stationIcon = new L.Icon({
+  iconUrl: 'img/bike-blue.png',
+  shadowUrl: 'img/marker-shadow.png',
+  iconSize: [28, 32],
+  iconAnchor: [8, 28],
+  popupAnchor: [1, -32],
+  shadowSize: [48, 32]
+});
+
 //L.marker([51.5, -0.09], {icon: greenIcon}).addTo(map);
 
 
@@ -225,6 +241,12 @@ var map = L.map('map', {zoomControl: false});
 L.control.zoom({position: 'bottomright'}).addTo(map);
 L.control.scale().addTo(map);
 map.setZoom(12); // one time
+
+/*
+// test icon
+var latlng = [40.761873, -73.987706];
+L.marker(latlng, {icon: stationIcon}).addTo(map);
+*/
 
 var accessToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
 
@@ -265,12 +287,12 @@ function do_display_directions()
     if (DirectionPolyline)
         map.removeLayer(DirectionPolyline);
     var latlngs = DirectionsObj.latlngs;
-    DirectionPolyline = L.polyline(latlngs, {color: 'red', smoothFactor: 10}).addTo(map);
+    DirectionPolyline = L.polyline(latlngs, {smoothFactor: 2}).addTo(map);
     console.log('DirectionPolyline', DirectionPolyline);
     console.log('latlngs', latlngs);
     if (latlngs.length != 2 || latlngs[0].toString() != latlngs[1].toString()) { // javascript is an embarassing language
         // don't zoom in to a single point, it's disorienting and pointless
-        map.fitBounds(DirectionPolyline.getBounds().pad(0.25));
+        map.fitBounds(DirectionPolyline.getBounds().pad(0.05));
     }
 }
 
@@ -399,7 +421,7 @@ function do_display_nearby_stations(obj)
     console.log('nst', nst);
     var stations = nst.map((x) => x[1]);
     stations.forEach(function(st) {
-        var m = L.marker(st.latlng).addTo(map).bindPopup(st.name);
+        var m = L.marker(st.latlng, {icon: stationIcon}).addTo(map).bindPopup(st.name);
         m.on('click', function(ev) {
             station_clicked_push(st);
         });
@@ -623,7 +645,7 @@ function nearest_stations(from)
     console.log('mindist', mindist);
     var i = 3;
     // return multiple "close enough" stations
-    while (i < ds.length && i < 5 && ds[i][0] <= mindist * 2)
+    while (i < ds.length && i < 5 && ds[i][0] <= mindist * 3)
         i++;
     return ds.slice(0, i);
 }
