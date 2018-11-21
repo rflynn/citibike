@@ -338,6 +338,33 @@ var iconStationActive44DocksFull = new L.Icon({
   shadowSize: [32, 36]
 });
 
+var iconStationActive44DocksLeft1 = new L.Icon({
+  iconUrl: 'img/citibike-station-ref/active-available-4-4-docksleft-1.png',
+  iconSize: [26, 32],
+  iconAnchor: [13, 32],
+  popupAnchor: [1, -32],
+  shadowUrl: 'img/citibike-station-ref/shadow2.png',
+  shadowSize: [32, 36]
+});
+
+var iconStationActive44DocksLeft2 = new L.Icon({
+  iconUrl: 'img/citibike-station-ref/active-available-4-4-docksleft-2.png',
+  iconSize: [26, 32],
+  iconAnchor: [13, 32],
+  popupAnchor: [1, -32],
+  shadowUrl: 'img/citibike-station-ref/shadow2.png',
+  shadowSize: [32, 36]
+});
+
+var iconStationActive44DocksLeft3 = new L.Icon({
+  iconUrl: 'img/citibike-station-ref/active-available-4-4-docksleft-3.png',
+  iconSize: [26, 32],
+  iconAnchor: [13, 32],
+  popupAnchor: [1, -32],
+  shadowUrl: 'img/citibike-station-ref/shadow2.png',
+  shadowSize: [32, 36]
+});
+
 
 
 
@@ -1731,28 +1758,31 @@ var IconsStations = {
     active04bikesleft1: iconStationActive04BikesLeft1,
     active04bikesleft2: iconStationActive04BikesLeft2,
     active04bikesleft3: iconStationActive04BikesLeft3,
-    active04:   iconStationActive04,
-    active14:   iconStationActive14,
-    active24:   iconStationActive24,
-    active34:   iconStationActive34,
-    active44:   iconStationActive44,
-    active44docksfull: iconStationActive44DocksFull,
-    comingsoon: iconStationInactive,
-    inactive:   iconStationInactive,
-    valet:      iconStationActive44
+    active04:           iconStationActive04,
+    active14:           iconStationActive14,
+    active24:           iconStationActive24,
+    active34:           iconStationActive34,
+    active44:           iconStationActive44,
+    active44docksfull:  iconStationActive44DocksFull,
+    active44docksleft1: iconStationActive44DocksLeft1,
+    active44docksleft2: iconStationActive44DocksLeft2,
+    active44docksleft3: iconStationActive44DocksLeft3,
+    comingsoon:         iconStationInactive,
+    inactive:           iconStationInactive,
+    valet:              iconStationActive44
 };
 
 function station2status(name)
 {
     var st = Stations2[name];
     var propst = st.properties.station;
-    var icontype = null;
+    var icon_type = null;
     if (propst.installed === false) {
-        icontype = 'comingsoon';
+        icon_type = 'comingsoon';
     } else if (propst.renting === false) {
-        icontype = 'inactive';
+        icon_type = 'inactive';
     } else if (propst.valet_status === 'available') {
-        icontype = 'valet';
+        icon_type = 'valet';
     } else {
         var capacity = propst.capacity;
         var ba = propst.bikes_available;
@@ -1763,6 +1793,9 @@ function station2status(name)
         else if (ba == 2)        icon_type = 'active04bikesleft2';
         else if (ba == 3)        icon_type = 'active04bikesleft3';
         else if (da == 0)        icon_type = 'active44docksfull';
+        else if (da == 1)        icon_type = 'active44docksleft1';
+        else if (da == 2)        icon_type = 'active44docksleft2';
+        else if (da == 3)        icon_type = 'active44docksleft3';
         else if (ba <= 5)        icon_type = 'active04';
         else if (ba_pct <  0.60) icon_type = 'active24';
         else if (ba_pct <  0.80) icon_type = 'active34';
