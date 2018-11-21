@@ -249,7 +249,7 @@ var iconStationInactive = new L.Icon({
 });
 
 var iconStationActiveEmpty = new L.Icon({
-  iconUrl: 'img/citibike-station-ref/active-available-0-4-empty.png',
+  iconUrl: 'img/citibike-station-ref/active-available-0-4-bikesleft-0.png',
   iconSize: [26, 32],
   iconAnchor: [13, 32],
   popupAnchor: [1, -32],
@@ -328,6 +328,19 @@ var iconStationActive44 = new L.Icon({
   shadowUrl: 'img/citibike-station-ref/shadow2.png',
   shadowSize: [32, 36]
 });
+
+var iconStationActive44DocksFull = new L.Icon({
+  iconUrl: 'img/citibike-station-ref/active-available-4-4-docksavailable-full.png',
+  iconSize: [26, 32],
+  iconAnchor: [13, 32],
+  popupAnchor: [1, -32],
+  shadowUrl: 'img/citibike-station-ref/shadow2.png',
+  shadowSize: [32, 36]
+});
+
+
+
+
 
 
 var nyc = [
@@ -1723,6 +1736,7 @@ var IconsStations = {
     active24:   iconStationActive24,
     active34:   iconStationActive34,
     active44:   iconStationActive44,
+    active44docksfull: iconStationActive44DocksFull,
     comingsoon: iconStationInactive,
     inactive:   iconStationInactive,
     valet:      iconStationActive44
@@ -1743,18 +1757,17 @@ function station2status(name)
         var capacity = propst.capacity;
         var ba = propst.bikes_available;
         var ba_pct = (ba.toFixed(6) / capacity).toFixed(4);
-             if (ba == 0)     icon_type = 'empty';
-        else if (ba_pct <  0.20)
-        {
-                 if (ba == 1) icon_type = 'active04bikesleft1';
-            else if (ba == 2) icon_type = 'active04bikesleft2';
-            else if (ba == 3) icon_type = 'active04bikesleft3';
-            else              icon_type = 'active04';
-        }
-        else if (ba_pct <  0.40) icon_type = 'active14';
+        var da = propst.docks_available;
+             if (ba == 0)        icon_type = 'empty';
+        else if (ba == 1)        icon_type = 'active04bikesleft1';
+        else if (ba == 2)        icon_type = 'active04bikesleft2';
+        else if (ba == 3)        icon_type = 'active04bikesleft3';
+        else if (da == 0)        icon_type = 'active44docksfull';
+        else if (ba <= 5)        icon_type = 'active04';
         else if (ba_pct <  0.60) icon_type = 'active24';
         else if (ba_pct <  0.80) icon_type = 'active34';
         else if (ba_pct >= 0.80) icon_type = 'active44';
+        else                     icon_type = 'active14';
     }
     return icon_type;
 }
