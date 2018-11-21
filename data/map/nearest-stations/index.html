@@ -39,7 +39,8 @@ body, #map {
     white-space: pre;
 }
 .loc_entry {
-    margin: 5px;
+    margin: 2px;
+    margin-top: 5px;
 }
 table.dirs {
     margin: 1px;
@@ -58,6 +59,11 @@ td.r {
 {
     font-size: x-small;
 }
+.ui-accordion-header {
+    border: 0 !important;
+    border-radius: 1px;
+    margin: 0 !important;
+}
 .ui-accordion-content {
     padding-left: 0;
     padding-right: 0;
@@ -74,6 +80,25 @@ th {
 }
 #loc_cache_list li {
     padding: 4px; /* enough space to bnot fat-finger on mobile.. */
+}
+button#rev_from_and_to {
+    padding: 0px;
+    margin: 0;
+    margin-left: 2px;
+    border: 0;
+    font-size: 15px;
+    background-color: inherit;
+}
+input[type=search] {
+
+    /* get rid of rounded borders */
+    border-radius: 0;
+    -webkit-appearance: none; 
+
+    padding: 3px;
+    border: 0;
+    border-bottom: 1px solid #ccc;
+    font-size: 13px;
 }
 </style>
 <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
@@ -160,7 +185,7 @@ $( "#to_input" ).autocomplete({
     </div>
 
     <div id="to" class="loc_entry">
-        <input id="to_input" type="search" placeholder="to" size="26" value="" onfocus="focusto('to');"  onchange="do_get_geocode(this.value);"> <button title="Reverse 'from' and 'to'" onclick="reverse_from_and_to()">&#x21D5;</button>
+        <input id="to_input" type="search" placeholder="to" size="28" value="" onfocus="focusto('to');"  onchange="do_get_geocode(this.value);"><button id="rev_from_and_to" title="Reverse 'from' and 'to'" onclick="reverse_from_and_to()">&#x21D5;</button>
         <div id="to_loc_details"></div>
     </div>
 
@@ -203,6 +228,7 @@ function focusto(f)
 
 console.log('script running...');
 
+// old 'n busted
 var stationIcon = new L.Icon({
   iconUrl: 'img/bike-blue.png',
   shadowUrl: 'img/marker-shadow.png',
@@ -218,8 +244,44 @@ var iconStationInactive = new L.Icon({
   iconSize: [26, 32],
   iconAnchor: [13, 32],
   popupAnchor: [1, -32],
-  shadowUrl: 'img/citibike-station-ref/shadow.png',
-  shadowSize: [28, 34]
+  shadowUrl: 'img/citibike-station-ref/shadow2.png',
+  shadowSize: [32, 36]
+});
+
+var iconStationActiveEmpty = new L.Icon({
+  iconUrl: 'img/citibike-station-ref/active-available-0-4-empty.png',
+  iconSize: [26, 32],
+  iconAnchor: [13, 32],
+  popupAnchor: [1, -32],
+  shadowUrl: 'img/citibike-station-ref/shadow2.png',
+  shadowSize: [32, 36]
+});
+
+var iconStationActive04BikesLeft1 = new L.Icon({
+  iconUrl: 'img/citibike-station-ref/active-available-0-4-bikesleft-1.png',
+  iconSize: [26, 32],
+  iconAnchor: [13, 32],
+  popupAnchor: [1, -32],
+  shadowUrl: 'img/citibike-station-ref/shadow2.png',
+  shadowSize: [32, 36]
+});
+
+var iconStationActive04BikesLeft2 = new L.Icon({
+  iconUrl: 'img/citibike-station-ref/active-available-0-4-bikesleft-2.png',
+  iconSize: [26, 32],
+  iconAnchor: [13, 32],
+  popupAnchor: [1, -32],
+  shadowUrl: 'img/citibike-station-ref/shadow2.png',
+  shadowSize: [32, 36]
+});
+
+var iconStationActive04BikesLeft3 = new L.Icon({
+  iconUrl: 'img/citibike-station-ref/active-available-0-4-bikesleft-3.png',
+  iconSize: [26, 32],
+  iconAnchor: [13, 32],
+  popupAnchor: [1, -32],
+  shadowUrl: 'img/citibike-station-ref/shadow2.png',
+  shadowSize: [32, 36]
 });
 
 var iconStationActive04 = new L.Icon({
@@ -227,8 +289,8 @@ var iconStationActive04 = new L.Icon({
   iconSize: [26, 32],
   iconAnchor: [13, 32],
   popupAnchor: [1, -32],
-  shadowUrl: 'img/citibike-station-ref/shadow.png',
-  shadowSize: [28, 34]
+  shadowUrl: 'img/citibike-station-ref/shadow2.png',
+  shadowSize: [32, 36]
 });
 
 var iconStationActive14 = new L.Icon({
@@ -236,8 +298,8 @@ var iconStationActive14 = new L.Icon({
   iconSize: [26, 32],
   iconAnchor: [13, 32],
   popupAnchor: [1, -32],
-  shadowUrl: 'img/citibike-station-ref/shadow.png',
-  shadowSize: [28, 34]
+  shadowUrl: 'img/citibike-station-ref/shadow2.png',
+  shadowSize: [32, 36]
 });
 
 var iconStationActive24 = new L.Icon({
@@ -245,8 +307,8 @@ var iconStationActive24 = new L.Icon({
   iconSize: [26, 32],
   iconAnchor: [13, 32],
   popupAnchor: [1, -32],
-  shadowUrl: 'img/citibike-station-ref/shadow.png',
-  shadowSize: [28, 34]
+  shadowUrl: 'img/citibike-station-ref/shadow2.png',
+  shadowSize: [32, 36]
 });
 
 var iconStationActive34 = new L.Icon({
@@ -254,8 +316,8 @@ var iconStationActive34 = new L.Icon({
   iconSize: [26, 32],
   iconAnchor: [13, 32],
   popupAnchor: [1, -32],
-  shadowUrl: 'img/citibike-station-ref/shadow.png',
-  shadowSize: [28, 34]
+  shadowUrl: 'img/citibike-station-ref/shadow2.png',
+  shadowSize: [32, 36]
 });
 
 var iconStationActive44 = new L.Icon({
@@ -263,17 +325,8 @@ var iconStationActive44 = new L.Icon({
   iconSize: [26, 32],
   iconAnchor: [13, 32],
   popupAnchor: [1, -32],
-  shadowUrl: 'img/citibike-station-ref/shadow.png',
-  shadowSize: [28, 34]
-});
-
-var iconStationActiveEmpty = new L.Icon({
-  iconUrl: 'img/citibike-station-ref/active-available-empty.png',
-  iconSize: [26, 32],
-  iconAnchor: [13, 32],
-  popupAnchor: [1, -32],
-  shadowUrl: 'img/citibike-station-ref/shadow.png',
-  shadowSize: [28, 34]
+  shadowUrl: 'img/citibike-station-ref/shadow2.png',
+  shadowSize: [32, 36]
 });
 
 
@@ -1661,7 +1714,10 @@ function stations_fetch()
 }
 
 var IconsStations = {
-    empty:      iconStationActiveEmpty,
+    empty:              iconStationActiveEmpty,
+    active04bikesleft1: iconStationActive04BikesLeft1,
+    active04bikesleft2: iconStationActive04BikesLeft2,
+    active04bikesleft3: iconStationActive04BikesLeft3,
     active04:   iconStationActive04,
     active14:   iconStationActive14,
     active24:   iconStationActive24,
@@ -1687,12 +1743,18 @@ function station2status(name)
         var capacity = propst.capacity;
         var ba = propst.bikes_available;
         var ba_pct = (ba.toFixed(6) / capacity).toFixed(4);
-             if (ba == 0)        icon_type = 'empty';
+             if (ba == 0)     icon_type = 'empty';
+        else if (ba_pct <  0.20)
+        {
+                 if (ba == 1) icon_type = 'active04bikesleft1';
+            else if (ba == 2) icon_type = 'active04bikesleft2';
+            else if (ba == 3) icon_type = 'active04bikesleft3';
+            else              icon_type = 'active04';
+        }
+        else if (ba_pct <  0.40) icon_type = 'active14';
+        else if (ba_pct <  0.60) icon_type = 'active24';
+        else if (ba_pct <  0.80) icon_type = 'active34';
         else if (ba_pct >= 0.80) icon_type = 'active44';
-        else if (ba_pct >= 0.60) icon_type = 'active34';
-        else if (ba_pct >= 0.40) icon_type = 'active24';
-        else if (ba_pct >= 0.20) icon_type = 'active14';
-        else if (ba_pct <  0.20) icon_type = 'active04';
     }
     return icon_type;
 }
