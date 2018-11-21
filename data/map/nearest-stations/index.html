@@ -106,6 +106,7 @@ input[type=search] {
 
 
 
+
 <script>
 
 var LocCacheCnt = window.localStorage ? JSON.parse(window.localStorage.getItem('LocCacheCnt') || '{}') : {};
@@ -239,6 +240,15 @@ var stationIcon = new L.Icon({
 });
 
 
+var iconWaypoint = new L.Icon({
+  iconUrl: 'img/citibike-station-ref/ball1.png',
+  iconSize: [24, 32],
+  iconAnchor: [12, 29],
+  popupAnchor: [1, -32]
+  //shadowUrl: 'img/citibike-station-ref/shadow2.png',
+  //shadowSize: [32, 36]
+});
+
 var iconStationInactive = new L.Icon({
   iconUrl: 'img/citibike-station-ref/inactive.png',
   iconSize: [26, 32],
@@ -330,7 +340,7 @@ var iconStationActive44 = new L.Icon({
 });
 
 var iconStationActive44DocksFull = new L.Icon({
-  iconUrl: 'img/citibike-station-ref/active-available-4-4-docksavailable-full.png',
+  iconUrl: 'img/citibike-station-ref/active-available-4-4-docksleft-full.png',
   iconSize: [26, 32],
   iconAnchor: [13, 32],
   popupAnchor: [1, -32],
@@ -424,25 +434,93 @@ function display_directions(from, to, dirs)
 {
     process_directions(dirs);
     do_display_directions();
+    do_pushstate();
     display_nearby_stations(from, to);
 }
 
+function waypoint_push(obj)
+{
+    console.log('waypoint_push obj', obj);
+    var ll = obj.getLatLng();
+    var latlng = [ll.lat, ll.lng];
+    var origlatlng = obj._data.origlatlng;
+    delete WayPoints[origlatlng];
+    WayPoints[latlng] = latlng;
+    console.log('waypoint_push WayPoints', WayPoints);
+}
+
+var shownToCircle = [];
+
 function do_display_directions()
 {
-
     do_display_direction_steps();
+
+    shownToCircle.forEach(function(c) {
+        map.removeLayer(c);
+    });
+    shownToCircle = [];
 
     // show directions polyline
     // clean up
     if (DirectionPolyline)
         map.removeLayer(DirectionPolyline);
     var latlngs = DirectionsObj.latlngs;
-    DirectionPolyline = L.polyline(latlngs, {smoothFactor: 2}).addTo(map);
-    console.log('DirectionPolyline', DirectionPolyline);
     console.log('latlngs', latlngs);
+    DirectionPolyline = L.polyline(latlngs, {smoothFactor: 1}).addTo(map);
+    console.log('DirectionPolyline', DirectionPolyline);
+
+    latlngs.forEach(function(latlng, i) {
+
+        // draggable waypoint...
+        // ref: http://embed.plnkr.co/SJRec3/preview
+
+        var m = L.marker(latlng, {
+                        icon: iconWaypoint,
+                        draggable: true,
+                        title: 'waypoint'
+                    }).addTo(map);
+        m._data = {
+            origlatlng: latlng,
+            dirlatlngindex: i
+        };
+        m.on('dragend', function (ev) {
+            console.log(ev.type, ev.target.latlng, ev);
+            waypoint_push(ev.target);
+            do_get_directions();
+        });
+        console.log('waypoint m', m);
+        shownToCircle.push(m);
+
+    });
+
     if (latlngs.length != 2 || latlngs[0].toString() != latlngs[1].toString()) { // javascript is an embarassing language
         // don't zoom in to a single point, it's disorienting and pointless
         map.fitBounds(DirectionPolyline.getBounds().pad(0.05));
+    }
+}
+
+function do_pushstate()
+{
+    // push directions as new state; this way back/forward buttons can cycle through directions
+    var title = LocFrom.obj.place_name + ' to ' + LocTo.obj.place_name;
+    var params = [
+        ['from', LocFrom.obj.place_name],
+        ['to', LocTo.obj.place_name]
+    ];
+    var paramsEncoded = params.map((x) => x[0] + '=' + encodeURIComponent(x[1])).join('&');
+    var url = '?' + paramsEncoded;
+    var state = {
+        title: title,
+        LocFrom: LocFrom,
+        LocTo: LocTo,
+        WayPoints: WayPoints
+    };
+    document.title = title; // history.pushState title is currently not used by browsers? why?
+    if (window.history) {
+        console.log('window.history.pushState', state, title, url);
+        window.history.pushState(state, title, url);
+    } else {
+        console.log('no window.history');
     }
 }
 
@@ -489,14 +567,15 @@ function do_display_direction_steps()
 
     // fugly; separate concerns
     $('#steps').html('');
-    $('#steps').append('<table class=dirs><tr><th>' +
+    $('#steps').append('<table class=dirs><tr><th colspan=2>' +
         '<div>' +
         '    <span id="dir_dist"></span> <span id="dir_dist_unit"></span>' +
         '    <span id="dir_dur"></span> <span id="dir_dur_unit"></span>' +
         '</div>' +
     '<th>dist<th>time');
-    steps.forEach(function(st) {
+    steps.forEach(function(st, i) {
         $('#steps table').append('<tr>' +
+            '<td>' + (i+1) +
             '<td>' + simplify_instruction(st.maneuver.instruction) +
             '<td class=r>' + meters_to_miles(st.distance).toFixed(1) +
             '<td class=r>' + seconds_format_clock(st.duration)
@@ -627,11 +706,18 @@ function get_directions(from, to)
     var tolatlng = rev(to.latlng);
 
     var req = new XMLHttpRequest();
-    fromstr = fromlatlng[0] + ',' + fromlatlng[1];
-    tostr = tolatlng[0] + ',' + tolatlng[1];
+    var fromstr = fromlatlng[0] + ',' + fromlatlng[1];
+    var tostr = tolatlng[0] + ',' + tolatlng[1];
+    var waypts = Object.keys(WayPoints).map(function(k) {
+        var latlng = WayPoints[k];
+        return latlng[1] + ',' + latlng[0];
+    });
     var url = ('https://api.mapbox.com/directions/v5/mapbox/cycling/'
-                + fromstr + ';' + tostr + '?steps=true&access_token=' + accessToken
+                + fromstr + (waypts.length > 0 ? ';' + waypts.join(';') : '') + ';' + tostr
+                + '?steps=true'
+                + '&access_token=' + accessToken
                );
+    console.log('url', url);
     req.open('GET', url, true);
     req.onreadystatechange = function () {
         switch (req.readyState) {
@@ -639,7 +725,9 @@ function get_directions(from, to)
             switch (req.status) {
             case 200:
                 console.log('done', req);
-                display_directions(from, to, JSON.parse(req.responseText));
+                var dirJson = JSON.parse(req.responseText);
+                console.log('dirJson', dirJson);
+                display_directions(from, to, dirJson);
                 break;
             default:
                 console.log('error', req);
@@ -698,6 +786,7 @@ var LocTo = {
     obj: null,
     nearby_stations: []
 };
+var WayPoints = {};
 function station_clicked_push(obj)
 {
     console.log('station_clicked_push', obj);
@@ -706,10 +795,12 @@ function station_clicked_push(obj)
 
     if (FocusFromOrTo == 'from') {
         LocFrom.obj = obj;
+        WayPoints = {};
         update_from_input();
         focusto('to');
     } else if (FocusFromOrTo == 'to') {
         LocTo.obj = obj;
+        WayPoints = {};
         update_to_input();
     }
     maybe_look_up_directions();
@@ -763,16 +854,9 @@ function update_from_input()
     $('#from_input').val(LocFrom.obj.place_name || LocFrom.obj.name || '');
 }
 
-var shownToCircle = [];
 function update_to_input()
 {
-    if (shownToCircle.length) {
-        shownToCircle.forEach(function(c) {
-            map.removeLayer(c);
-        });
-    }
     if (LocTo.obj !== null) {
-        shownToCircle = [];
         var radius = 25;
         var c = L.circle(LocTo.obj.latlng, radius).addTo(map);
         c.bindTooltip(LocTo.obj.name);
@@ -823,6 +907,11 @@ function reverse_from_and_to()
     LocFrom = LocTo;
     LocTo = LocTmp;
 
+    do_get_directions();
+}
+
+function do_get_directions()
+{
     update_from_input();
     update_to_input();
     maybe_look_up_directions();
@@ -1082,6 +1171,22 @@ if (navigator.geolocation) {
     },
     opts);
 }
+});
+
+window.addEventListener('popstate', function(ev) {
+    console.log('url changed', ev);
+    if (ev.type == 'popstate') {
+        var state = ev.state;
+        console.log('handling popstate...', ev.state);
+        // now go "back" (restore previous state)
+        document.title = state.title;
+        LocFrom        = state.LocFrom;
+        LocTo          = state.LocTo;
+        WayPoints      = state.WayPoints;
+        do_get_directions();
+    } else {
+        console.log('unsupported url change type..');
+    }
 });
 </script>
 </body>
