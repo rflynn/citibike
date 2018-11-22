@@ -434,8 +434,8 @@ function display_directions(from, to, dirs)
 {
     process_directions(dirs);
     do_display_directions();
-    do_pushstate();
     display_nearby_stations(from, to);
+    do_pushstate();
 }
 
 function waypoint_push(obj)
@@ -508,7 +508,9 @@ function do_pushstate()
         ['to', LocTo.obj.place_name]
     ];
     var paramsEncoded = params.map((x) => x[0] + '=' + encodeURIComponent(x[1])).join('&');
-    var url = '?' + paramsEncoded;
+    var currentURL = window.location.href;
+    var connector = !!window.location.search ? '&' : '?';
+    var url = currentURL + connector + paramsEncoded;
     var state = {
         title: title,
         LocFrom: LocFrom,
