@@ -241,10 +241,10 @@ var stationIcon = new L.Icon({
 
 
 var iconWaypoint = new L.Icon({
-  iconUrl: 'img/citibike-station-ref/ball1.png',
-  iconSize: [24, 32],
-  iconAnchor: [12, 29],
-  popupAnchor: [1, -32]
+  iconUrl: 'img/citibike-station-ref/ball2.png',
+  iconSize: [7, 7],
+  iconAnchor: [3, 3]
+  //popupAnchor: [1, -32]
   //shadowUrl: 'img/citibike-station-ref/shadow2.png',
   //shadowSize: [32, 36]
 });
@@ -466,7 +466,11 @@ function do_display_directions()
         map.removeLayer(DirectionPolyline);
     var latlngs = DirectionsObj.latlngs;
     console.log('latlngs', latlngs);
-    DirectionPolyline = L.polyline(latlngs, {smoothFactor: 1}).addTo(map);
+    DirectionPolyline = L.polyline(latlngs,
+                                    {
+                                        weight: 11.0,
+                                        smoothFactor: 1.0
+                                    }).addTo(map);
     console.log('DirectionPolyline', DirectionPolyline);
 
     latlngs.forEach(function(latlng, i) {
@@ -477,7 +481,7 @@ function do_display_directions()
         var m = L.marker(latlng, {
                         icon: iconWaypoint,
                         draggable: true,
-                        title: 'waypoint'
+                        title: 'waypoint #' + (i+1)
                     }).addTo(map);
         m._data = {
             origlatlng: latlng,
