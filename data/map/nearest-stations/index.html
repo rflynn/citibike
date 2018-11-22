@@ -833,7 +833,7 @@ function update_from_input()
     }
     if (LocFrom.obj !== null) {
         shownCircle = [];
-        var radius = 25;
+        var radius = 1;
         var c = L.circle(LocFrom.obj.latlng, radius).addTo(map);
         c.bindTooltip(LocFrom.obj.name);
         shownCircle.push(c);
@@ -857,7 +857,7 @@ function update_from_input()
 function update_to_input()
 {
     if (LocTo.obj !== null) {
-        var radius = 25;
+        var radius = 1;
         var c = L.circle(LocTo.obj.latlng, radius).addTo(map);
         c.bindTooltip(LocTo.obj.name);
         shownToCircle.push(c);
@@ -996,10 +996,17 @@ function nearest_stations(from)
     var ds = distance_stations(from);
     var mindist = Math.max(ds[0][0], 0.001);
     console.log('mindist', mindist);
-    var i = 3;
+    var cnt_nonemptyish = 0;
+    var i = 0;
     // return multiple "close enough" stations
-    while (i < ds.length && i < 5 && ds[i][0] <= mindist * 2.5)
+    while (i < ds.length && cnt_nonemptyish < 3)
+    {
         i++;
+        if (ds[i][1].properties.station.bikes_available > 3 &&
+            ds[i][1].properties.station.docks_available > 3) {
+            cnt_nonemptyish++;
+        }
+    }
     return ds.slice(0, i);
 }
 
