@@ -1007,11 +1007,11 @@ function nearest_stations(from)
     // return multiple "close enough" stations
     while (i < ds.length && cnt_nonemptyish < 3)
     {
-        i++;
         if (ds[i][1].properties.station.bikes_available > 3 &&
             ds[i][1].properties.station.docks_available > 3) {
             cnt_nonemptyish++;
         }
+        i++;
     }
     return ds.slice(0, i);
 }
