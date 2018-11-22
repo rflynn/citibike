@@ -241,7 +241,7 @@ var stationIcon = new L.Icon({
 
 
 var iconWaypoint = new L.Icon({
-  iconUrl: 'img/citibike-station-ref/ball2.png',
+  iconUrl: 'img/citibike-station-ref/ball3.png',
   iconSize: [7, 7],
   iconAnchor: [3, 3]
   //popupAnchor: [1, -32]
@@ -772,6 +772,8 @@ function loc_cache_render()
     keys = keys.sort((a, b) => LocCacheCnt[b] - LocCacheCnt[a]);
     keys = keys.slice(0, 25);
     $('#loc_cache_list').empty();
+    // special "current location" entry on top
+    $('#loc_cache_list').append($('<li>').append($('<a style="cursor:pointer" onclick="do_geolocate()">').text('current location')));
     keys.forEach(function(k) {
         $('#loc_cache_list').append($('<li>').append($('<a style="cursor:pointer" onclick="station_clicked_push(LocCache[' + "'" + k + "'" + '])">').text(loc_place_name_shorten(k))));
     });
@@ -1159,31 +1161,35 @@ function do_geolocated(latlng)
     map.setView(latlng);
 }
 
-$(document).ready(function() {
-// real shit
-if (navigator.geolocation) {
-    var opts = {
-        enableHighAccuracy: true,
-        timeout: 5000,
-        maximumAge: 0
-    };
-    navigator.geolocation.getCurrentPosition(function(pos) {
-        console.log('getCurrentPosition success', pos);
-        var lat = pos.coords.latitude;
-        var lng = pos.coords.longitude;
-        var latlng = [lat, lng];
-        do_geolocated(latlng);
-    },
-    function(err) {
-        console.log('getCurrentPosition error', err);
-        alert("geolocation failed: " + JSON.stringify(err));
-        // set map to manhattan, but don't count it as "from"...
-        var latlng = [40.761873, -73.987706];
-        //station_clicked_push({type: 'getCurrentPosition', fake: true, latlng: latlng})
-        map.setView(latlng, 15);
-    },
-    opts);
+function do_geolocate()
+{
+    if (navigator.geolocation) {
+        var opts = {
+            enableHighAccuracy: true,
+            timeout: 5000,
+            maximumAge: 0
+        };
+        navigator.geolocation.getCurrentPosition(function(pos) {
+            console.log('getCurrentPosition success', pos);
+            var lat = pos.coords.latitude;
+            var lng = pos.coords.longitude;
+            var latlng = [lat, lng];
+            do_geolocated(latlng);
+        },
+        function(err) {
+            console.log('getCurrentPosition error', err);
+            alert("geolocation failed: " + JSON.stringify(err));
+            // set map to manhattan, but don't count it as "from"...
+            var latlng = [40.761873, -73.987706];
+            //station_clicked_push({type: 'getCurrentPosition', fake: true, latlng: latlng})
+            map.setView(latlng, 15);
+        },
+        opts);
+    }
 }
+
+$(document).ready(function() {
+    do_geolocate();
 });
 
 window.addEventListener('popstate', function(ev) {
@@ -1201,6 +1207,11 @@ window.addEventListener('popstate', function(ev) {
         console.log('unsupported url change type..');
     }
 });
+
+document.addEventListener('visibilitychange', function() {
+    console.log('visibilityState', document.visibilityState);
+}, false);
+
 </script>
 </body>
 </html>
