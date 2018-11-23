@@ -517,14 +517,11 @@ function do_pushstate()
 {
     // push directions as new state; this way back/forward buttons can cycle through directions
     var title = LocFrom.obj.place_name + ' to ' + LocTo.obj.place_name;
-    var params = [
-        ['from', LocFrom.obj.place_name],
-        ['to', LocTo.obj.place_name]
-    ];
-    var paramsEncoded = params.map((x) => x[0] + '=' + encodeURIComponent(x[1])).join('&');
-    var currentURL = window.location.href;
+    var params = new URLSearchParams(window.location.search);
+    params.set('from', LocFrom.obj.place_name);
+    params.set('to', LocTo.obj.place_name);
     var connector = !!window.location.search ? '&' : '?';
-    var url = currentURL + connector + paramsEncoded;
+    var newurl = window.location.href + connector + params.toString();
     var state = {
         title: title,
         LocFrom: LocFrom,
@@ -533,8 +530,8 @@ function do_pushstate()
     };
     document.title = title; // history.pushState title is currently not used by browsers? why?
     if (window.history) {
-        console.log('window.history.pushState', state, title, url);
-        window.history.pushState(state, title, url);
+        console.log('window.history.pushState', state, title, newurl);
+        window.history.pushState(state, title, newurl);
     } else {
         console.log('no window.history');
     }
