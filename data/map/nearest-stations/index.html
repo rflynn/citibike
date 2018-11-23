@@ -88,6 +88,7 @@ button#rev_from_and_to {
     border: 0;
     font-size: 15px;
     background-color: inherit;
+    cursor: pointer;
 }
 input[type=search] {
 
@@ -180,19 +181,28 @@ $( "#to_input" ).autocomplete({
 <div id="map"></div>
 
 <div id="pane">
+
+    <table>
+    <tr>
+    <td>
+
     <div id="from" class="loc_entry">
-        <input id="from_input" type="search" placeholder="from" size="30" value="" onfocus="focusto('from');" onchange="do_get_geocode(this.value);">
+        <input id="from_input" type="search" placeholder="from" size="28" value="" onfocus="focusto('from');" onchange="do_get_geocode(this.value);">
         <div id="from_loc_details"></div>
     </div>
 
     <div id="to" class="loc_entry">
-        <input id="to_input" type="search" placeholder="to" size="28" value="" onfocus="focusto('to');"  onchange="do_get_geocode(this.value);"><button id="rev_from_and_to" title="Reverse 'from' and 'to'" onclick="reverse_from_and_to()">&#x21D5;</button>
+        <input id="to_input" type="search" placeholder="to" size="28" value="" onfocus="focusto('to');"  onchange="do_get_geocode(this.value);">
         <div id="to_loc_details"></div>
     </div>
 
+    <td>
+        <button id="rev_from_and_to" title="swap 'from' and 'to'" onclick="reverse_from_and_to()"><img src="img/reverse-from-and-to.png" width="12" alt="&#x21D5;"></button>
+    </table>
+
     <div id="directions">
         <h3>Locations</h3>
-        <div style="margin:0;padding:0">
+        <div style="margin:0;padding:0; max-height:70vh; overflow:scroll">
         <ol id="loc_cache_list"></ol>
         </div>
         <h3>Directions</h3>
