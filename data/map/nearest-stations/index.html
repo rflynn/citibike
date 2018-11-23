@@ -491,7 +491,7 @@ function do_display_directions()
         var m = L.marker(latlng, {
                         icon: iconWaypoint,
                         draggable: true,
-                        title: 'waypoint #' + (i+1)
+                        title: '#' + (i + 1) + ': ' + DirectionsSteps[i].instruction.simplified
                     }).addTo(map);
         m._data = {
             origlatlng: latlng,
@@ -574,14 +574,33 @@ function simplify_instruction(ins)
     return ins;
 }
 
+var DirectionsSteps = [];
 function do_display_direction_steps()
 {
     var steps = DirectionsObj.steps;
-    var stepsPretty = JSON.stringify(steps, null, 2);
-    //document.getElementById('directions_raw').innerText = stepsPretty;
     console.log('steps', steps);
 
-    // fugly; separate concerns
+    // convert raw-ish steps into displayable data
+    DirectionsSteps = [];
+    steps.forEach(function(st, i) {
+        DirectionsSteps.push({
+            number: i + 1,
+            instruction: {
+                raw: st.maneuver.instruction,
+                simplified: simplify_instruction(st.maneuver.instruction)
+            },
+            distance: {
+                raw: st.distance,
+                inMeters: meters_to_miles(st.distance).toFixed(1)
+            },
+            duration: {
+                raw: st.duration,
+                formatted: seconds_format_clock(st.duration)
+            }
+        });
+    });
+
+    // render
     $('#steps').html('');
     $('#steps').append('<table class=dirs><tr><th colspan=2>' +
         '<div>' +
@@ -589,12 +608,12 @@ function do_display_direction_steps()
         '    <span id="dir_dur"></span> <span id="dir_dur_unit"></span>' +
         '</div>' +
     '<th>dist<th>time');
-    steps.forEach(function(st, i) {
+    DirectionsSteps.forEach(function(st, i) {
         $('#steps table').append('<tr>' +
-            '<td>' + (i+1) +
-            '<td>' + simplify_instruction(st.maneuver.instruction) +
-            '<td class=r>' + meters_to_miles(st.distance).toFixed(1) +
-            '<td class=r>' + seconds_format_clock(st.duration)
+            '<td>' + st.number +
+            '<td>' + st.instruction.simplified +
+            '<td class=r>' + st.distance.inMeters +
+            '<td class=r>' + st.duration.formatted
         );
     });
 
