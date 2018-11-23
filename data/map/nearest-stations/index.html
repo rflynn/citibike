@@ -20,6 +20,19 @@ body, #map {
 #map {
     z-index: 1;
 }
+.leaflet-control-zoom-in {
+    border-top-left-radius: 2px !important;
+    border-top-right-radius: 2px !important;
+}
+.leaflet-control-zoom-out {
+    border-bottom-left-radius: 2px !important;
+    border-bottom-right-radius: 2px !important;
+}
+.leaflet-bar {
+    box-shadow: none; /* get rid of shadow... */
+    border: 1px solid #aaa;
+    border-radius: 2px;
+}
 .leaflet-control-attribution {
     font-size: 6pt !important;
 }
@@ -33,7 +46,7 @@ body, #map {
     z-index: 2;
     background-color: #fff;
     font-size: small;
-    font-family: sans-serif;
+    font-family: Helvetica, Arial Narrow, sans-serif;
 }
 .loc_entry {
     margin: 2px;
@@ -76,11 +89,10 @@ th {
     padding: 4px; /* enough space to bnot fat-finger on mobile.. */
 }
 button#rev_from_and_to {
-    padding: 0px;
+    padding: 2px;
     margin: 0;
-    margin-left: 2px;
     border: 0;
-    font-size: 15px;
+    font-size: 22px;
     background-color: inherit;
     cursor: pointer;
 }
@@ -88,12 +100,23 @@ input[type=search] {
 
     /* get rid of rounded borders */
     border-radius: 0;
-    -webkit-appearance: none; 
+    -webkit-appearance: none;
 
     padding: 3px;
     border: 0;
     border-bottom: 1px solid #ccc;
     font-size: 13px;
+}
+.dir_line_cycling {
+    fill: none;
+    stroke: #3388ff;
+    stroke-width: 11px;
+}
+.dir_line_walking {
+    fill: none;
+    stroke: #3388ff;
+    stroke-width: 11px;
+    stroke-dasharray: 5,5;
 }
 </style>
 <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
@@ -174,24 +197,24 @@ $( "#to_input" ).autocomplete({
 
 <div id="map"></div>
 
-<div id="pane">
+<div id="pane" style="border:1px solid #aaa; border-radius:2px">
 
     <table>
     <tr>
     <td>
 
     <div id="from" class="loc_entry">
-        <input id="from_input" type="search" placeholder="from" size="28" value="" onfocus="focusto('from');" onchange="do_get_geocode(this.value);">
+        <input id="from_input" type="search" placeholder="from" size="27" value="" onfocus="focusto('from');" onchange="do_get_geocode(this.value);">
         <div id="from_loc_details"></div>
     </div>
 
     <div id="to" class="loc_entry">
-        <input id="to_input" type="search" placeholder="to" size="28" value="" onfocus="focusto('to');"  onchange="do_get_geocode(this.value);">
+        <input id="to_input" type="search" placeholder="to" size="27" value="" onfocus="focusto('to');"  onchange="do_get_geocode(this.value);">
         <div id="to_loc_details"></div>
     </div>
 
     <td>
-        <button id="rev_from_and_to" title="swap 'from' and 'to'" onclick="reverse_from_and_to()"><img src="img/reverse-from-and-to.png" width="12" alt="&#x21D5;"></button>
+        <button id="rev_from_and_to" title="swap 'from' and 'to'" onclick="reverse_from_and_to()">&#x21c5;</button>
     </table>
 
     <div id="directions">
@@ -411,11 +434,14 @@ L.control.scale().addTo(map);
 
 var accessToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
 
-var mapboxTileLayer = L.tileLayer('https://api.mapbox.com/styles/v1/{acct}/{id}/tiles/256/{z}/{x}/{y}{r}?access_token={accessToken}', {
+var mapboxTileLayer = L.tileLayer('https://api.mapbox.com/styles/v1/{acct}/{id}/tiles/256/{z}/{x}/{y}?access_token={accessToken}', {
     maxZoom: 18,
     acct: 'parseerror',
-    id: 'cjou7knyc3iuv2rmmiw0lnyac',
-    accessToken: accessToken
+    // XXX: TODO: figure out how to apply/copy the rail-label layer from Outdoor to Light
+    //id: 'cjou7knyc3iuv2rmmiw0lnyac', // light -- very clean and cold, but no subway stops, HAS RETINA
+    id: 'cjoudjl7b2l7b2rp8nngrm55g', // outdoors, warmer, less clean, but has subway stops, NO RETINA
+    accessToken: accessToken,
+    detectRetina: false
 }).addTo(map);
 
 
@@ -465,8 +491,8 @@ function do_display_directions()
     console.log('latlngs', latlngs);
     DirectionPolyline = L.polyline(latlngs,
                                     {
-                                        weight: 11.0,
-                                        smoothFactor: 1.0
+                                        smoothFactor: 1.0,
+                                        className: 'dir_line_cycling'
                                     }).addTo(map);
     console.log('DirectionPolyline', DirectionPolyline);
 
@@ -1025,7 +1051,7 @@ function nearest_stations(from)
     var cnt_nonemptyish = 0;
     var i = 0;
     // return multiple "close enough" stations
-    while (i < ds.length && cnt_nonemptyish < 3)
+    while (i < ds.length && cnt_nonemptyish < 5)
     {
         if (ds[i][1].properties.station.bikes_available > 3 &&
             ds[i][1].properties.station.docks_available > 3) {
