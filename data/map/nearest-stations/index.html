@@ -6,6 +6,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.4/dist/leaflet.css" integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA==" crossorigin=""/>
 <script src="https://unpkg.com/leaflet@1.3.4/dist/leaflet.js" integrity="sha512-nMMmRyTVoLYqjP9hrbed9S+FzjZHW5gY1TWCHA5ckwXZBadntCNs8kEqAWdrb9O7rxbCaA4lKTIWjDXZxflOcA==" crossorigin=""></script>
 <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<script src="https://rawgit.com/mapbox/mapbox-gl-leaflet/master/leaflet-mapbox-gl.js"></script>
 <style>
 body, #map {
     margin: 0;
@@ -110,12 +111,12 @@ input[type=search] {
 .dir_line_cycling {
     fill: none;
     stroke: #3388ff;
-    stroke-width: 11px;
+    stroke-width: 5px;
 }
 .dir_line_walking {
     fill: none;
     stroke: #3388ff;
-    stroke-width: 11px;
+    stroke-width: 7px;
     stroke-dasharray: 5,5;
 }
 </style>
@@ -273,7 +274,7 @@ var stationIcon = new L.Icon({
 
 var iconWaypoint = new L.Icon({
   iconUrl: 'img/citibike-station-ref/ball3.png',
-  iconSize: [7, 7],
+  iconSize: [5, 5],
   iconAnchor: [3, 3]
   //popupAnchor: [1, -32]
   //shadowUrl: 'img/citibike-station-ref/shadow2.png',
@@ -444,6 +445,12 @@ var mapboxTileLayer = L.tileLayer('https://api.mapbox.com/styles/v1/{acct}/{id}/
     detectRetina: false
 }).addTo(map);
 
+/*
+var gl = L.mapboxGL({
+    accessToken: accessToken,
+    style: 't'
+}).addTo(map);
+*/
 
 var DirectionPolyline = null;
 var DirectionsObj = {
@@ -733,6 +740,18 @@ function station2obj(st)
     }
 }
 
+function station_display(name)
+{
+    var st = Stations2[name];
+    var stobj = station2obj(st);
+    var m = L.marker(stobj.latlng, {icon: station2icon(stobj.name)}).addTo(map);
+    m.bindTooltip(station_tooltip(stobj.name));
+    m.on('click', function(ev) {
+        station_clicked_push(stobj);
+    });
+    shownMarkers.push(m);
+}
+
 function do_display_nearby_stations(obj)
 {
     console.log('do_display_nearby_stations', obj);
@@ -740,13 +759,7 @@ function do_display_nearby_stations(obj)
     console.log('nst', nst);
     var stations = nst.map((x) => x[1]);
     stations.forEach(function(st) {
-        var stobj = station2obj(st);
-        var m = L.marker(stobj.latlng, {icon: station2icon(stobj.name)}).addTo(map);
-        m.bindTooltip(station_tooltip(stobj.name));
-        m.on('click', function(ev) {
-            station_clicked_push(stobj);
-        });
-        shownMarkers.push(m);
+        station_display(st.properties.station.name);
     });
 }
 
@@ -814,7 +827,7 @@ function loc_cache_render()
     var keys = Object.keys(LocCacheCnt);
     keys = keys.filter((x) => LocCacheCnt[x] >= 1);
     keys = keys.sort((a, b) => LocCacheCnt[b] - LocCacheCnt[a]);
-    keys = keys.slice(0, 25);
+    //keys = keys.slice(0, 25);
     $('#loc_cache_list').empty();
     // special "current location" entry on top
     $('#loc_cache_list').append($('<li>').append($('<a style="cursor:pointer" onclick="do_geolocate()">').text('current location')));
