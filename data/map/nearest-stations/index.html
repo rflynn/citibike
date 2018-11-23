@@ -26,7 +26,7 @@ body, #map {
 #pane {
     margin: 5px;
     /*height: 100vh;*/
-    max-width: 25em;
+    max-width: 23em;
     top: 0;
     /*bottom: 0;*/
     position: absolute;
@@ -34,9 +34,6 @@ body, #map {
     background-color: #fff;
     font-size: small;
     font-family: sans-serif;
-}
-#directions directions_raw {
-    white-space: pre;
 }
 .loc_entry {
     margin: 2px;
@@ -49,9 +46,6 @@ table.dirs {
 }
 td.r {
     text-align: right;
-}
-#directions_raw {
-    display: none;
 }
 
 #from_loc_details,
@@ -113,7 +107,7 @@ input[type=search] {
 var LocCacheCnt = window.localStorage ? JSON.parse(window.localStorage.getItem('LocCacheCnt') || '{}') : {};
 var LocCache = window.localStorage ? JSON.parse(window.localStorage.getItem('LocCache') || '{}') : {};
 
-$(document).ready( function() {
+$(document).ready(function() {
     stations_init();
     loc_cache_render();
     //$('#directions').hide();
@@ -206,9 +200,8 @@ $( "#to_input" ).autocomplete({
         <ol id="loc_cache_list"></ol>
         </div>
         <h3>Directions</h3>
-        <div style="margin:0;padding:0">
+        <div style="margin:0;padding:0; max-height: 70vh; overflow:scroll">
             <div id="steps"></div>
-            <!--div id="directions_raw"></div-->
         </div>
     </div>
 </div>
@@ -219,7 +212,7 @@ $( "#to_input" ).autocomplete({
 
 <script>
 var FocusFromOrTo = 'from';
-focusto('from');
+
 function focusto(f)
 {
     if (f == 'from') {
@@ -235,7 +228,12 @@ function focusto(f)
     } else {
         throw 'unknown focus: ' + f;
     }
+    $('#directions').accordion('option', 'active', 0); // locations
 }
+
+$(document).ready(function() {
+    focusto('from');
+});
 
 console.log('script running...');
 
@@ -388,47 +386,36 @@ var iconStationActive44DocksLeft3 = new L.Icon({
 
 
 
-
-
-var nyc = [
+var NYC = [
     40.72706363348306,
    -73.99662137031554
 ];
 
-//var gct='-73.977718,40.751956';
 var GCT = [
      40.751956,
     -73.977718,
 ];
 
 var map = L.map('map', {
-                        center: nyc,
+                        center: GCT,
                         zoom: 12,
                         zoomControl: false
                        });
 L.control.zoom({position: 'bottomright'}).addTo(map);
 L.control.scale().addTo(map);
 
-/*
 // test icon
-var latlng = [40.761873, -73.987706];
-L.marker(latlng, {icon: stationIcon}).addTo(map);
-*/
 //L.marker(GCT, {icon: iconStationActive44}).addTo(map);
 
 
 
 var accessToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
 
-//L.tileLayer('https://a.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}@2x.png?access_token={accessToken}', {
-L.tileLayer('https://a.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}{retina}.png?access_token={accessToken}', {
+var mapboxTileLayer = L.tileLayer('https://api.mapbox.com/styles/v1/{acct}/{id}/tiles/256/{z}/{x}/{y}{r}?access_token={accessToken}', {
     maxZoom: 18,
-    attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
-        '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
-        'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
-    id: 'mapbox.streets',
-    accessToken: accessToken,
-    retina: navigator.appVersion.match(/iPhone/) ? '' : navigator.appVersion.match(/Mac OS/) ? '@2x' : ''
+    acct: 'parseerror',
+    id: 'cjou7knyc3iuv2rmmiw0lnyac',
+    accessToken: accessToken
 }).addTo(map);
 
 
@@ -488,11 +475,13 @@ function do_display_directions()
         // draggable waypoint...
         // ref: http://embed.plnkr.co/SJRec3/preview
 
+        var instruction = DirectionsSteps[i].instruction.simplified;
         var m = L.marker(latlng, {
                         icon: iconWaypoint,
                         draggable: true,
-                        title: '#' + (i + 1) + ': ' + DirectionsSteps[i].instruction.simplified
+                        title: '#' + (i + 1) + ': ' + instruction
                     }).addTo(map);
+        m.bindTooltip(instruction);
         m._data = {
             origlatlng: latlng,
             dirlatlngindex: i
@@ -518,10 +507,14 @@ function do_pushstate()
     // push directions as new state; this way back/forward buttons can cycle through directions
     var title = LocFrom.obj.place_name + ' to ' + LocTo.obj.place_name;
     var params = new URLSearchParams(window.location.search);
+    console.log('params before', params.toString().length, params);
     params.set('from', LocFrom.obj.place_name);
     params.set('to', LocTo.obj.place_name);
+    console.log('params after', params.toString().length, params);
     var connector = !!window.location.search ? '&' : '?';
-    var newurl = window.location.href + connector + params.toString();
+    var newurl = window.location.origin + window.location.pathname + '?' + params.toString();
+    console.log('current url', window.location.href.length, window.location.href);
+    console.log('new url', newurl.length, newurl);
     var state = {
         title: title,
         LocFrom: LocFrom,
@@ -604,13 +597,12 @@ function do_display_direction_steps()
         '    <span id="dir_dist"></span> <span id="dir_dist_unit"></span>' +
         '    <span id="dir_dur"></span> <span id="dir_dur_unit"></span>' +
         '</div>' +
-    '<th>dist<th>time');
+    '<th>dist');
     DirectionsSteps.forEach(function(st, i) {
         $('#steps table').append('<tr>' +
             '<td>' + st.number +
             '<td>' + st.instruction.simplified +
-            '<td class=r>' + st.distance.inMeters +
-            '<td class=r>' + st.duration.formatted
+            '<td class=r>' + st.distance.inMeters
         );
     });
 
@@ -871,8 +863,8 @@ function update_from_input()
         var c = L.circle(LocFrom.obj.latlng, radius).addTo(map);
         c.bindTooltip(LocFrom.obj.name);
         shownCircle.push(c);
-        c.bindPopup(LocFrom.obj.name).openPopup();
-        setTimeout(() => map.removeLayer(c._popup), 2000);
+        c.bindPopup(LocFrom.obj.name, {autoClose: true}).openPopup();
+        //setTimeout(() => map.removeLayer(c._popup), 5000);
 
         // on first "from", fly to it
         if (LocTo.obj === null) {
@@ -895,8 +887,8 @@ function update_to_input()
         var c = L.circle(LocTo.obj.latlng, radius).addTo(map);
         c.bindTooltip(LocTo.obj.name);
         shownToCircle.push(c);
-        c.bindPopup(LocTo.obj.name).openPopup();
-        setTimeout(() => map.removeLayer(c._popup), 2000);
+        c.bindPopup(LocTo.obj.name, {autoClose: false}).openPopup();
+        setTimeout(() => map.removeLayer(c._popup), 5000);
     }
 
     $('#to_input').val(LocTo.obj.place_name || LocTo.obj.name || '');
@@ -1204,7 +1196,7 @@ function do_geolocate()
         },
         function(err) {
             console.log('getCurrentPosition error', err);
-            alert("geolocation failed: " + JSON.stringify(err));
+            //alert("geolocation failed: " + JSON.stringify(err));
             // set map to manhattan, but don't count it as "from"...
             var latlng = [40.761873, -73.987706];
             //station_clicked_push({type: 'getCurrentPosition', fake: true, latlng: latlng})
@@ -1214,8 +1206,50 @@ function do_geolocate()
     }
 }
 
+function handle_url_params()
+{
+    // handle current params
+    // whew, this was a bit of a mess to figure out, and i'm not confident it'll work all the time...
+    // but, it enables us to share urls for testing, so it's helpful today...
+    if (window.location.search) {
+        var params = new URLSearchParams(window.location.search);
+        var downKeyEvent = $.Event('keydown');
+        downKeyEvent.keyCode = $.ui.keyCode.DOWN;
+        var enterKeyEvent = $.Event('keydown');
+        enterKeyEvent.keyCode = $.ui.keyCode.ENTER;
+        var from = params.get('from');
+        var to = params.get('to');
+        if (from) {
+            console.log('param from', from);
+            $('#from_input').focus();
+            $('#from_input').val(from.replace(/^([^,]+).*/, '$1'));
+            $('#from_input').one('autocompleteopen', function( event, ui ) {
+                $('#from_input').trigger(downKeyEvent);  // Second downkey highlights first item
+                $('#from_input').trigger(enterKeyEvent);
+                if (to) {
+                    console.log('param to', to);
+                    $('#to_input').focus();
+                    //$('#to_input').val(to);
+                    $('#to_input').val(to.replace(/^([^,]+).*/, '$1'));
+                    $('#to_input').one('autocompleteopen', function( event, ui ) {
+                        $('#to_input').trigger(downKeyEvent);  // Second downkey highlights first item
+                        $('#to_input').trigger(enterKeyEvent);
+                        // XXX: TODO: FIXME: reset callback
+                    });
+                    $('#to_input').autocomplete('search');
+                }
+            });
+            $('#from_input').autocomplete('search');
+        }
+        if (from || to) {
+            do_get_directions();
+        }
+    }
+}
+
 $(document).ready(function() {
     do_geolocate();
+    handle_url_params();
 });
 
 window.addEventListener('popstate', function(ev) {
