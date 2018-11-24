@@ -1214,7 +1214,10 @@ map.on('locationerror', function(ev) {
 
 function geolocateOncePush()
 {
-    geolocateOnce(geolocatePushCurrentPosition);
+    geolocateOnce(geolocatePushCurrentPosition, function(latlng) {
+        var latlng = [40.761873, -73.987706];
+        map.setView(latlng, 15);
+    });
 }
 
 function geolocateOnceShow()
@@ -1239,11 +1242,9 @@ function geolocateOnce(success, error)
         },
         function(err) {
             console.log('getCurrentPosition error', err);
-            //alert("geolocation failed: " + JSON.stringify(err));
-            // set map to manhattan, but don't count it as "from"...
-            var latlng = [40.761873, -73.987706];
-            //station_clicked_push({type: 'getCurrentPosition', fake: true, latlng: latlng})
-            map.setView(latlng, 15);
+            if (error) {
+                error(latlng);
+            }
         },
         opts);
     }
@@ -1313,7 +1314,6 @@ function handle_url_params()
                     $('#to_input').one('autocompleteopen', function( event, ui ) {
                         $('#to_input').trigger(downKeyEvent);  // Second downkey highlights first item
                         $('#to_input').trigger(enterKeyEvent);
-                        // XXX: TODO: FIXME: reset callback
                     });
                     $('#to_input').autocomplete('search');
                 }
