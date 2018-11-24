@@ -543,7 +543,7 @@ function do_pushstate()
     params.set('from', LocFrom.obj.place_name);
     params.set('to', LocTo.obj.place_name);
     var connector = !!window.location.search ? '&' : '?';
-    var newurl = window.location.origin + window.location.pathname + '?' + params.toString();
+    var newurl = window.location.origin + window.location.pathname + '?' + params.toString().replace(/=&/, '&');; // XXX: HACK to handle github hosting parameter format...
     console.log('current url', window.location.href.length, window.location.href);
     console.log('new url', newurl.length, newurl);
     var state = {
