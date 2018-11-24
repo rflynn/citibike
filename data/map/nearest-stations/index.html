@@ -273,7 +273,7 @@ var stationIcon = new L.Icon({
 
 
 var iconWaypoint = new L.Icon({
-  iconUrl: 'img/citibike-station-ref/ball3.png',
+  iconUrl: 'img/citibike-station-ref/ball2.png',
   iconSize: [5, 5],
   iconAnchor: [3, 3]
   //popupAnchor: [1, -32]
@@ -540,10 +540,8 @@ function do_pushstate()
     // push directions as new state; this way back/forward buttons can cycle through directions
     var title = LocFrom.obj.place_name + ' to ' + LocTo.obj.place_name;
     var params = new URLSearchParams(window.location.search);
-    console.log('params before', params.toString().length, params);
     params.set('from', LocFrom.obj.place_name);
     params.set('to', LocTo.obj.place_name);
-    console.log('params after', params.toString().length, params);
     var connector = !!window.location.search ? '&' : '?';
     var newurl = window.location.origin + window.location.pathname + '?' + params.toString();
     console.log('current url', window.location.href.length, window.location.href);
@@ -1096,6 +1094,7 @@ function stations_fetch()
                 Stations2[fst.properties.station.name] = fst;
             });
             console.log('Stations2', Stations2);
+            handle_url_params(); // handle params, since they might be Stations... XXX: HACK:
         }
     })
 }
@@ -1243,7 +1242,7 @@ function geolocateOnce(success, error)
         function(err) {
             console.log('getCurrentPosition error', err);
             if (error) {
-                error(latlng);
+                error();
             }
         },
         opts);
@@ -1302,23 +1301,55 @@ function handle_url_params()
         if (from) {
             console.log('param from', from);
             $('#from_input').focus();
-            $('#from_input').val(from.replace(/^([^,]+).*/, '$1'));
-            $('#from_input').one('autocompleteopen', function( event, ui ) {
-                $('#from_input').trigger(downKeyEvent);  // Second downkey highlights first item
-                $('#from_input').trigger(enterKeyEvent);
+            if (from in Stations2) {
+                console.log('from in Stations2', station2obj(Stations2[from]));
+                $('#from_input').val(from);
+                station_clicked_push(station2obj(Stations2[from]));
+
                 if (to) {
                     console.log('param to', to);
                     $('#to_input').focus();
-                    //$('#to_input').val(to);
-                    $('#to_input').val(to.replace(/^([^,]+).*/, '$1'));
-                    $('#to_input').one('autocompleteopen', function( event, ui ) {
-                        $('#to_input').trigger(downKeyEvent);  // Second downkey highlights first item
-                        $('#to_input').trigger(enterKeyEvent);
-                    });
-                    $('#to_input').autocomplete('search');
+                    if (to in Stations2) {
+                        $('#to_input').val(to);
+                        station_clicked_push(station2obj(Stations2[to]));
+                    } else {
+                        $('#to_input').val(to.replace(/^([^,]+).*/, '$1'));
+                        $('#to_input').one('autocompleteopen', function( event, ui ) {
+                            $('#to_input').trigger(downKeyEvent);  // Second downkey highlights first item
+                            $('#to_input').trigger(enterKeyEvent);
+                        });
+                        $('#to_input').autocomplete('search');
+                    }
                 }
-            });
-            $('#from_input').autocomplete('search');
+
+            } else {
+                console.log('from not in Stations2');
+                $('#from_input').val(from.replace(/^([^,]+).*/, '$1'));
+                $('#from_input').one('autocompleteopen', function( event, ui ) {
+                    $('#from_input').trigger(downKeyEvent);  // Second downkey highlights first item
+                    $('#from_input').trigger(enterKeyEvent);
+
+                    if (to) {
+                        console.log('param to', to);
+                        $('#to_input').focus();
+                        if (to in Stations2) {
+                            console.log('to in Stations2', station2obj(Stations2[to]));
+                            $('#to_input').val(to);
+                            station_clicked_push(station2obj(Stations2[to]));
+                        } else {
+                            console.log('to not in Stations2');
+                            $('#to_input').val(to.replace(/^([^,]+).*/, '$1'));
+                            $('#to_input').one('autocompleteopen', function( event, ui ) {
+                                $('#to_input').trigger(downKeyEvent);  // Second downkey highlights first item
+                                $('#to_input').trigger(enterKeyEvent);
+                            });
+                            $('#to_input').autocomplete('search');
+                        }
+                    }
+
+                });
+                $('#from_input').autocomplete('search');
+            }
         }
         if (from || to) {
             do_get_directions();
@@ -1328,7 +1359,6 @@ function handle_url_params()
 
 $(document).ready(function() {
     geolocateOncePush();
-    handle_url_params();
 });
 
 window.addEventListener('popstate', function(ev) {
