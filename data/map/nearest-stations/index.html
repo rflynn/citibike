@@ -111,7 +111,7 @@ input[type=search] {
 .dir_line_cycling {
     fill: none;
     stroke: #3388ff;
-    stroke-width: 5px;
+    stroke-width: 7px;
 }
 .dir_line_walking {
     fill: none;
@@ -435,7 +435,7 @@ L.control.scale().addTo(map);
 
 var accessToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
 
-var mapboxTileLayer = L.tileLayer('https://api.mapbox.com/styles/v1/{acct}/{id}/tiles/256/{z}/{x}/{y}?access_token={accessToken}', {
+var mapboxTileLayer = L.tileLayer('https://api.mapbox.com/styles/v1/{acct}/{id}/tiles/256/{z}/{x}/{y}{r}?access_token={accessToken}', {
     maxZoom: 18,
     acct: 'parseerror',
     // XXX: TODO: figure out how to apply/copy the rail-label layer from Outdoor to Light
