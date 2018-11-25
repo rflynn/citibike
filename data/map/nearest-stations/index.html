@@ -1319,7 +1319,7 @@ function handle_url_params()
                         $('#to_input').val(to);
                         station_clicked_push(station2obj(Stations2[to]));
                     } else {
-                        $('#to_input').val(to.replace(/^([^,]+).*/, '$1'));
+                        $('#to_input').val(to.replace(/^([^,]+(?:,[^,]+)?).*/, '$1'));
                         $('#to_input').one('autocompleteopen', function( event, ui ) {
                             $('#to_input').trigger(downKeyEvent);  // Second downkey highlights first item
                             $('#to_input').trigger(enterKeyEvent);
@@ -1330,7 +1330,7 @@ function handle_url_params()
 
             } else {
                 console.log('from not in Stations2');
-                $('#from_input').val(from.replace(/^([^,]+).*/, '$1'));
+                $('#from_input').val(from.replace(/^([^,]+(?:,[^,]+)?).*/, '$1'));
                 $('#from_input').one('autocompleteopen', function( event, ui ) {
                     $('#from_input').trigger(downKeyEvent);  // Second downkey highlights first item
                     $('#from_input').trigger(enterKeyEvent);
@@ -1344,7 +1344,7 @@ function handle_url_params()
                             station_clicked_push(station2obj(Stations2[to]));
                         } else {
                             console.log('to not in Stations2');
-                            $('#to_input').val(to.replace(/^([^,]+).*/, '$1'));
+                            $('#to_input').val(to.replace(/^([^,]+(?:,[^,]+)?).*/, '$1'));
                             $('#to_input').one('autocompleteopen', function( event, ui ) {
                                 $('#to_input').trigger(downKeyEvent);  // Second downkey highlights first item
                                 $('#to_input').trigger(enterKeyEvent);
