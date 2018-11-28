@@ -15,20 +15,20 @@ declare -r destdir=./data/raw/$yyyy/$mm/$dd
 mkdir -p $destdir
 
 declare -r destfile=$destdir/$ts-nyc-map-inventory.json
-echo "url=$url destfile=$destfile"
+#echo "url=$url destfile=$destfile"
 
 mkdir -p ./data/tmp/
 declare -r tmpfile=$(mktemp "./data/tmp/${ts}-XXXX")
-if curl --retry 3 -L --max-time 20 --max-filesize 10000000 --user-agent "$ua"  -H 'Accept-Language: en-us' -H 'Accept-Encoding: gzip' --referer "$referer" -o $tmpfile "$url" >/dev/null
+if curl --silent --show-error --retry 3 -L --max-time 20 --max-filesize 10000000 --user-agent "$ua"  -H 'Accept-Language: en-us' -H 'Accept-Encoding: gzip' --referer "$referer" -o $tmpfile "$url"
 then
-    stat -f%z $tmpfile
-    if od -x -N 2 $tmpfile | grep 8b1f; then
+    stat -f%z $tmpfile >/dev/null
+    if od -x -N 2 $tmpfile | grep 8b1f >/dev/null; then
         # already gzip'd
         mv $tmpfile $destfile.gz
     else
         gzip $tmpfile
         mv $tmpfile.gz $destfile.gz
-        stat -f%z $destfile.gz
+        stat -f%z $destfile.gz >/dev/null
     fi
 else
     exit 1
