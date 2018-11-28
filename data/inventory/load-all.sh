@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -x
+#set -x
 
 find data/raw -type f | sort | xargs -n 10 ../../venv/bin/python load.py
 

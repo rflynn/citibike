@@ -19,7 +19,7 @@ echo "url=$url destfile=$destfile"
 
 mkdir -p ./data/tmp/
 declare -r tmpfile=$(mktemp "./data/tmp/${ts}-XXXX")
-if curl --retry 3 -L --max-time 20 --max-filesize 10000000 --user-agent "$ua"  -H 'Accept-Language: en-us' -H 'Accept-Encoding: gzip' --referer "$referer" -o $tmpfile "$url"
+if curl --retry 3 -L --max-time 20 --max-filesize 10000000 --user-agent "$ua"  -H 'Accept-Language: en-us' -H 'Accept-Encoding: gzip' --referer "$referer" -o $tmpfile "$url" >/dev/null
 then
     stat -f%z $tmpfile
     if od -x -N 2 $tmpfile | grep 8b1f; then
