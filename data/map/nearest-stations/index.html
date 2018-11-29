@@ -97,17 +97,35 @@ button#rev_from_and_to {
     background-color: inherit;
     cursor: pointer;
 }
-input[type=search] {
 
+input[type=search] {
     /* get rid of rounded borders */
     border-radius: 0;
+    appearance: none;
     -webkit-appearance: none;
-
     padding: 3px;
     border: 0;
     border-bottom: 1px solid #ccc;
     font-size: 13px;
 }
+
+/* ugh. get a fake "cancel" "X" button on the right side of from/to on iOS... */
+input[type=search]::-webkit-search-cancel-button {
+    height: 13px;
+    width: 13px;
+    appearance: searchfield-cancel-button;
+    -webkit-appearance: searchfield-cancel-button;
+    display: block;
+
+    /* ref: https://www.davidbcalhoun.com/2012/more-fun-with-webkit-pseudoelements--webkit-search-cancel-button-or-pseudoclass-inception/ */
+    /* setup all the background tweaks for our custom icon */
+background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAAn0lEQVR42u3UMQrDMBBEUZ9WfQqDmm22EaTyjRMHAlM5K+Y7lb0wnUZPIKHlnutOa+25Z4D++MRBX98MD1V/trSppLKHqj9TTBWKcoUqffbUcbBBEhTjBOV4ja4l4OIAZThEOV6jHO8ARXD+gPPvKMABinGOrnu6gTNUawrcQKNCAQ7QeTxORzle3+sDfjJpPCqhJh7GixZq4rHcc9l5A9qZ+WeBhgEuAAAAAElFTkSuQmCC);
+    background-repeat: no-repeat;
+    background-size: 13px;
+    background-position: top left;
+}
+
+
 .dir_line_cycling {
     fill: none;
     stroke: #3388ff;
